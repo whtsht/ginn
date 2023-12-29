@@ -7,7 +7,7 @@
 FILE* LOG_FILE;
 LogLevel LOG_LEVEL = LOG_INFO;
 
-void init_logger(char* logfile, LogLevel loglevel) {
+void init_logger(const char* logfile, LogLevel loglevel) {
     if (!(LOG_FILE = fopen(logfile, "a"))) {
         perror("Can't open the logfile");
         exit(EXIT_FAILURE);
@@ -31,7 +31,7 @@ static char* get_prefix(LogLevel loglevel) {
     }
 }
 
-void logging(LogLevel loglevel, char* message) {
+void logging(LogLevel loglevel, const char* message) {
     if (!LOG_FILE || LOG_LEVEL > loglevel) return;
 
     char* prefix = get_prefix(loglevel);
