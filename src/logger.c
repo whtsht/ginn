@@ -1,5 +1,6 @@
 #include "logger.h"
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -31,7 +32,7 @@ static char* get_prefix(LogLevel loglevel) {
     }
 }
 
-void logging(LogLevel loglevel, const char* message) {
+void logging_(LogLevel loglevel, const char* message) {
     if (!LOG_FILE || LOG_LEVEL > loglevel) return;
 
     char* prefix = get_prefix(loglevel);
@@ -42,6 +43,22 @@ void logging(LogLevel loglevel, const char* message) {
     strftime(s, sizeof s, "%D:%T", p);
 
     fprintf(LOG_FILE, "[%s] %s: %s\n", s, prefix, message);
+}
+
+void logging(LogLevel loglevel, const char* restrict format, ...) {
+    char* str;
+    va_list args;
+
+    va_start(args, format);
+    if (0 > vasprintf(&str, format, args)) str = NULL;
+    va_end(args);
+
+    if (str) {
+        logging_(loglevel, str);
+        free(str);
+    } else {
+        logging_(LOG_ERROR, "[system] failed to format string");
+    }
 }
 
 void cleanup_logger() {
