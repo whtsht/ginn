@@ -20,6 +20,9 @@ void init_logger(const char* logfile, LogLevel loglevel) {
 
 static char* get_prefix(LogLevel loglevel) {
     switch (loglevel) {
+        case LOG_DEBUG: {
+            return "DEBUG   ";
+        }
         case LOG_INFO: {
             return "INFO    ";
         }

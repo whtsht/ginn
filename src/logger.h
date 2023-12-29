@@ -2,6 +2,7 @@
 #define LOGGER_H
 
 typedef enum {
+    LOG_DEBUG,
     LOG_INFO,
     LOG_WARNING,
     LOG_ERROR,

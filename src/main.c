@@ -7,6 +7,7 @@
 #include "daemonize.h"
 #include "logger.h"
 #include "pidfile.h"
+#include "server.h"
 #include "signal_handler.h"
 
 void print_usage() {
@@ -51,7 +52,7 @@ void start() {
 
     init_signal_handler();
 
-    init_logger("/var/log/ginn.log", LOG_INFO);
+    init_logger("/var/log/ginn.log", LOG_DEBUG);
 
     int ret = write_pid("/var/run/ginn.pid");
     if (ret == 0) {
@@ -59,10 +60,14 @@ void start() {
         exit(EXIT_FAILURE);
     }
 
-    while (1) {
-        logging(LOG_INFO, "I'm alive!");
-        sleep(1);
+    char* portnm = "8080";
+    int soc = server_socket(portnm);
+    if (soc == -1) {
+        logging(LOG_ERROR, "server_socket(%s): error\n", portnm);
     }
+
+    accept_loop(soc);
+    close(soc);
 }
 
 void stop() {
@@ -77,7 +82,7 @@ void stop() {
     }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     check_args(argc);
 
     if (strcmp(argv[1], "start") == 0) {
