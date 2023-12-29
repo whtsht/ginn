@@ -12,6 +12,8 @@ void init_logger(char* logfile, LogLevel loglevel) {
         perror("Can't open the logfile");
         exit(EXIT_FAILURE);
     }
+
+    setvbuf(LOG_FILE, NULL, _IOLBF, 0);
     LOG_LEVEL = loglevel;
 }
 
