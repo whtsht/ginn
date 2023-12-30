@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "daemonize.h"
 #include "logger.h"
 #include "pidfile.h"
@@ -24,9 +25,13 @@ void check_args(int argc) {
 }
 
 void check_permission() {
-    if (access("/var/run", W_OK) == -1 || access("/var/log", W_OK) == -1) {
-        perror("Can't access to logfile or pidfile");
-        printf("Run Ginn as a user have appropriate permission.\n");
+    if (!fopen(CONFIG.logfile, "a")) {
+        perror("Can't access to logfile");
+        exit(EXIT_FAILURE);
+    }
+
+    if (!fopen(CONFIG.pidfile, "a")) {
+        perror("Can't access to pidfile");
         exit(EXIT_FAILURE);
     }
 }
@@ -35,7 +40,7 @@ void start() {
     check_permission();
 
     int pid;
-    if ((pid = check_pid("/var/run/ginn.pid"))) {
+    if ((pid = check_pid(CONFIG.pidfile))) {
         printf("already exist\n");
         exit(EXIT_FAILURE);
     }
@@ -52,9 +57,9 @@ void start() {
 
     init_signal_handler();
 
-    init_logger("/var/log/ginn.log", LOG_DEBUG);
+    init_logger(CONFIG.logfile, LOG_DEBUG);
 
-    int ret = write_pid("/var/run/ginn.pid");
+    int ret = write_pid(CONFIG.pidfile);
     if (ret == 0) {
         logging(LOG_ERROR, "write_pid\n");
         exit(EXIT_FAILURE);
@@ -74,9 +79,9 @@ void stop() {
     check_permission();
 
     int pid;
-    if ((pid = check_pid("/var/run/ginn.pid"))) {
+    if ((pid = check_pid(CONFIG.pidfile))) {
         kill(pid, SIGINT);
-        remove_pid("/var/run/ginn.pid");
+        remove_pid(CONFIG.pidfile);
     } else {
         printf("not found %d\n", pid);
     }
@@ -84,6 +89,7 @@ void stop() {
 
 int main(int argc, char* argv[]) {
     check_args(argc);
+    load_config("./ginn.conf");
 
     if (strcmp(argv[1], "start") == 0) {
         start();
@@ -96,5 +102,4 @@ int main(int argc, char* argv[]) {
     }
 
     print_usage();
-    exit(EXIT_FAILURE);
 }
