@@ -4,8 +4,10 @@ OBJDIR := obj
 BINDIR := bin
 
 EXE := $(BINDIR)/$(TARGET)
-SRC := $(wildcard $(SRCDIR)/*.c)
-OBJ := $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+SRC := $(wildcard $(SRCDIR)/**/*.c)
+OBJ := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o, $(SRC))
+SRCDIRS := $(sort $(dir $(SRC)))
+OBJDIRS := $(patsubst $(SRCDIR)%,$(OBJDIR)%,$(SRCDIRS))
 
 CFLAGS  := -Wall -Wextra -O2
 
@@ -17,10 +19,10 @@ $(TARGET): $(EXE)
 $(EXE): $(OBJ) | $(BINDIR)
 	$(CC) $^ -o $@
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
+$(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIRS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BINDIR) $(OBJDIR):
+$(OBJDIRS) $(BINDIR):
 	mkdir -p $@
 
 run: $(TARGET)

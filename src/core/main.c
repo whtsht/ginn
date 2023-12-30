@@ -3,12 +3,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "../worker/server.h"
 #include "args.h"
 #include "config.h"
 #include "daemonize.h"
 #include "logger.h"
 #include "pidfile.h"
-#include "server.h"
 #include "signal_handler.h"
 
 void check_permission() {
