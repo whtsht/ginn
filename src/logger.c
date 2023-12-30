@@ -29,7 +29,7 @@ static char* get_prefix(LogLevel loglevel) {
         case LOG_WARNING: {
             return "WARNING ";
         }
-        case LOG_ERROR: {
+        default: {
             return "ERROR   ";
         }
     }
