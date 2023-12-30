@@ -7,7 +7,7 @@ typedef struct {
     char* port;
 } Config;
 
-void load_config(const char* conffile);
+void load_config(const char* conf_file);
 
 extern Config CONFIG;
 

@@ -8,8 +8,8 @@
 
 Config CONFIG;
 
-static char* load_content(const char* conffile) {
-    FILE* fp = fopen(conffile, "r");
+static char* load_content(const char* conf_file) {
+    FILE* fp = fopen(conf_file, "r");
     if (!fp) {
         perror("fopen");
         exit(EXIT_FAILURE);
@@ -90,9 +90,9 @@ static Config default_config() {
                     .port = "4700"};
 }
 
-void load_config(const char* conffile) {
+void load_config(const char* conf_file) {
     Config config = default_config();
-    char* content = load_content(conffile);
+    char* content = load_content(conf_file);
 
     Parser* parser = parser_new(content);
 
