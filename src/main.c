@@ -1,28 +1,15 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
+#include "args.h"
 #include "config.h"
 #include "daemonize.h"
 #include "logger.h"
 #include "pidfile.h"
 #include "server.h"
 #include "signal_handler.h"
-
-void print_usage() {
-    fprintf(stderr,
-            "Usage: ginn <command>\n\nCommands:\nstart\n    start web "
-            "server\nstop\n    stop web server\n");
-}
-
-void check_args(int argc) {
-    if (argc != 2) {
-        print_usage();
-        exit(EXIT_FAILURE);
-    }
-}
 
 void check_permission() {
     if (!fopen(CONFIG.logfile, "a")) {
@@ -88,18 +75,17 @@ void stop() {
 }
 
 int main(int argc, char* argv[]) {
-    check_args(argc);
-    load_config("./ginn.conf");
+    Args args = parse_args(argc, argv);
+    load_config(args.conf_file);
 
-    if (strcmp(argv[1], "start") == 0) {
-        start();
-        exit(EXIT_SUCCESS);
+    switch (args.command) {
+        case StartCommand: {
+            start();
+            break;
+        }
+        case StopCommand: {
+            stop();
+            break;
+        }
     }
-
-    if (strcmp(argv[1], "stop") == 0) {
-        stop();
-        exit(EXIT_SUCCESS);
-    }
-
-    print_usage();
 }

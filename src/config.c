@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "default.h"
 #include "parser.h"
 
 Config CONFIG;
@@ -11,7 +12,7 @@ Config CONFIG;
 static char* load_content(const char* conf_file) {
     FILE* fp = fopen(conf_file, "r");
     if (!fp) {
-        perror("fopen");
+        perror("Can't open config file");
         exit(EXIT_FAILURE);
     }
     fseek(fp, 0L, SEEK_END);
@@ -84,16 +85,10 @@ static char* parser_port(Parser* parser) {
     return port;
 }
 
-static Config default_config() {
-    return (Config){.logfile = "/var/log/ginn.log",
-                    .pidfile = "/var/run/ginn.pid",
-                    .port = "4700"};
-}
-
 void load_config(const char* conf_file) {
     Config config = default_config();
-    char* content = load_content(conf_file);
 
+    char* content = load_content(conf_file);
     Parser* parser = parser_new(content);
 
     while (parser_word(parser)) {
