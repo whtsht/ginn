@@ -10,24 +10,6 @@
 
 Config CONFIG;
 
-static char* load_content(const char* conf_file) {
-    FILE* fp = fopen(conf_file, "r");
-    if (!fp) {
-        perror("Can't open config file");
-        exit(EXIT_FAILURE);
-    }
-    fseek(fp, 0L, SEEK_END);
-    long sz = ftell(fp);
-    fseek(fp, 0L, SEEK_SET);
-
-    char* content = (char*)malloc(sizeof(char) * (sz + 1));
-
-    fread(content, 1, sz, fp);
-    content[sz] = '\0';
-    fclose(fp);
-    return content;
-}
-
 static ParserStatus config_lexer(Parser* parser) {
     char n;
     while (parser_current(parser, &n) == PS_Success) {
@@ -113,8 +95,13 @@ static char* parser_port(Parser* parser) {
 void load_config(const char* conf_file) {
     Config config = default_config();
 
-    char* content = load_content(conf_file);
-    Parser* parser = parser_from_string(config_lexer, content);
+    FILE* fp = fopen(conf_file, "r");
+    if (!fp) {
+        perror("Can't open config file");
+        exit(EXIT_FAILURE);
+    }
+
+    Parser* parser = parser_from_file(config_lexer, fp);
 
     char word[100];
     while (parser_word(parser, space, word, 100) == PS_Success) {
