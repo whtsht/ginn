@@ -24,6 +24,8 @@ Args parse_args(int argc, char **argv) {
         args.command = StartCommand;
     } else if (strcmp(argv[1], "stop") == 0) {
         args.command = StopCommand;
+    } else if (strcmp(argv[1], "test") == 0) {
+        args.command = TestConfCommand;
     }
 
     if (argc >= 4 && strcmp(argv[2], "-c") == 0) {

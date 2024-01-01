@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,57 +28,81 @@ static char* load_content(const char* conf_file) {
     return content;
 }
 
+static ParserStatus config_lexer(Parser* parser) {
+    char n;
+    while (parser_current(parser, &n) == PS_Success) {
+        /* skip line comment */
+        if (n == '#') {
+            while (parser_current(parser, &n) == PS_Success && n != '\n') {
+                parser_next(parser);
+            }
+            continue;
+        }
+
+        if (n == ' ' || n == '\n') {
+            parser_next(parser);
+            continue;
+        }
+
+        break;
+    }
+    return parser_current(parser, &n);
+}
+
+static int separator(char c) { return c == ';' || c == ' ' || c == '\n'; }
+static int space(char c) { return c == ' '; }
+
 static char* parser_logfile(Parser* parser) {
-    if (!parser_word(parser)) {
+    char* filename = malloc(sizeof(char) * NAME_MAX);
+    if (parser_word(parser, separator, filename, NAME_MAX) != PS_Success) {
         fprintf(stderr, "logfile: expected filename\n");
+        free(filename);
         exit(EXIT_FAILURE);
     }
 
-    if (!parser_char(parser, ';')) {
+    if (parser_char(parser, ';') != PS_Success) {
         fprintf(stderr, "logfile: expected `;`\n");
+        free(filename);
         exit(EXIT_FAILURE);
     }
-
-    char* filename = malloc(sizeof(char) * MAX_WORD_LENGTH);
-    strcpy(filename, P_WORD);
-
     return filename;
 }
 
 static char* parser_pidfile(Parser* parser) {
-    if (!parser_word(parser)) {
+    char* filename = malloc(sizeof(char) * NAME_MAX);
+    if (parser_word(parser, separator, filename, NAME_MAX) != PS_Success) {
         fprintf(stderr, "pidfile: expected filename\n");
+        free(filename);
         exit(EXIT_FAILURE);
     }
 
-    if (!parser_char(parser, ';')) {
+    if (parser_char(parser, ';') != PS_Success) {
         fprintf(stderr, "pidfile: expected `;`\n");
+        free(filename);
         exit(EXIT_FAILURE);
     }
-
-    char* filename = malloc(sizeof(char) * MAX_WORD_LENGTH);
-    strcpy(filename, P_WORD);
 
     return filename;
 }
 
 static char* parser_port(Parser* parser) {
-    if (!parser_word(parser)) {
+    char* port = malloc(sizeof(char) * 100);
+    if (parser_word(parser, separator, port, 100) != PS_Success) {
         fprintf(stderr, "port: expected port number\n");
+        free(port);
         exit(EXIT_FAILURE);
     }
 
-    if (!parser_char(parser, ';')) {
+    if (parser_char(parser, ';') != PS_Success) {
         fprintf(stderr, "port: expected `;`\n");
+        free(port);
         exit(EXIT_FAILURE);
     }
-
-    char* port = malloc(sizeof(char) * MAX_WORD_LENGTH);
-    strcpy(port, P_WORD);
 
     for (int i = 0; port[i] != '\0'; i++) {
         if (port[i] < '0' || '9' < port[i]) {
             fprintf(stderr, "port: expected port number, found %s\n", port);
+            free(port);
             exit(EXIT_FAILURE);
         }
     }
@@ -89,27 +114,36 @@ void load_config(const char* conf_file) {
     Config config = default_config();
 
     char* content = load_content(conf_file);
-    Parser* parser = parser_new(content);
+    Parser* parser = parser_from_string(config_lexer, content);
 
-    while (parser_word(parser)) {
-        if (strcmp(P_WORD, "logfile") == 0) {
+    char word[100];
+    while (parser_word(parser, space, word, 100) == PS_Success) {
+        if (strcmp(word, "logfile") == 0) {
             config.logfile = parser_logfile(parser);
             continue;
         }
 
-        if (strcmp(P_WORD, "pidfile") == 0) {
+        if (strcmp(word, "pidfile") == 0) {
             config.pidfile = parser_pidfile(parser);
             continue;
         }
 
-        if (strcmp(P_WORD, "port") == 0) {
+        if (strcmp(word, "port") == 0) {
             config.port = parser_port(parser);
             continue;
         }
 
-        fprintf(stderr, "unexpected string: %s\n", P_WORD);
+        fprintf(stderr, "unexpected string: %s\n", word);
         exit(EXIT_FAILURE);
     }
 
+    parser_delete(parser);
+
     CONFIG = config;
+}
+
+void print_config() {
+    printf("\tlogfile\t= %s\n", CONFIG.logfile);
+    printf("\tpidfile\t= %s\n", CONFIG.pidfile);
+    printf("\tport\t= %s\n", CONFIG.port);
 }

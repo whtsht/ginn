@@ -52,10 +52,9 @@ void start() {
         exit(EXIT_FAILURE);
     }
 
-    char* portnm = "8080";
-    int soc = server_socket(portnm);
+    int soc = server_socket(CONFIG.port);
     if (soc == -1) {
-        logging(LOG_ERROR, "server_socket(%s): error\n", portnm);
+        logging(LOG_ERROR, "server_socket(%s): error\n", CONFIG.port);
     }
 
     accept_loop(soc);
@@ -85,6 +84,11 @@ int main(int argc, char* argv[]) {
         }
         case StopCommand: {
             stop();
+            break;
+        }
+        case TestConfCommand: {
+            puts("Successfully loaded configuration file.\nConfiguration:");
+            print_config();
             break;
         }
     }

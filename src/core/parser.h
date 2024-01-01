@@ -1,20 +1,43 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#define MAX_WORD_LENGTH 1000
+#include <stdio.h>
 
 typedef struct {
-    char* str;
+    char* data;
     int size;
     int cur;
-} Parser;
+} String;
 
-extern char P_WORD[MAX_WORD_LENGTH];
+typedef union {
+    String string;
+    FILE* file;
+    int socket;
+} ParserData;
 
-Parser* parser_new(char* str);
-void parser_free(Parser* parser);
+typedef enum {
+    PS_Success,
+    PS_Waiting,
+    PS_Failure,
+    PS_EndOfContent,
+} ParserStatus;
 
-char parser_char(Parser* parser, char c);
-int parser_word(Parser* parser);
+struct Parser {
+    ParserStatus (*lexer)(struct Parser* parser);
+    ParserStatus (*next)(ParserData* data);
+    ParserStatus (*current)(char* c, ParserData* data);
+    ParserData data;
+};
+
+typedef struct Parser Parser;
+
+Parser* parser_from_string(ParserStatus (*lexer)(struct Parser* parser),
+                           char* string);
+ParserStatus parser_next(Parser* parser);
+ParserStatus parser_current(Parser* parser, char* c);
+ParserStatus parser_char(Parser* parser, char c);
+ParserStatus parser_word(Parser* parser, int (*separator)(char), char* word,
+                         size_t max_word_length);
+void parser_delete(Parser* parser);
 
 #endif

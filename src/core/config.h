@@ -8,6 +8,7 @@ typedef struct {
 } Config;
 
 void load_config(const char* conf_file);
+void print_config();
 
 extern Config CONFIG;
 

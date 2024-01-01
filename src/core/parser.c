@@ -4,72 +4,83 @@
 #include <stdlib.h>
 #include <string.h>
 
-char P_WORD[MAX_WORD_LENGTH];
+static ParserStatus next_string(ParserData* data) {
+    if (data->string.cur < data->string.size) {
+        data->string.cur += 1;
+        return PS_Success;
+    } else {
+        return PS_EndOfContent;
+    }
+}
 
-Parser* parser_new(char* str) {
+static ParserStatus current_string(char* c, ParserData* data) {
+    if (data->string.cur < data->string.size) {
+        *c = data->string.data[data->string.cur];
+        return PS_Success;
+    } else {
+        return PS_EndOfContent;
+    }
+}
+
+Parser* parser_from_string(ParserStatus (*lexer)(struct Parser* parser),
+                           char* string) {
     Parser* parser = malloc(sizeof(Parser));
-    parser->str = str;
-    parser->size = strlen(str);
-    parser->cur = 0;
+    parser->current = NULL;
+    parser->next = next_string;
+    parser->current = current_string;
+    parser->lexer = lexer;
+    ParserData data;
+    data.string = (String){
+        .data = string,
+        .size = strlen(string),
+        .cur = 0,
+    };
+    parser->data = data;
     return parser;
 }
 
-void parser_free(Parser* parser) { free(parser); }
+ParserStatus parser_next(Parser* parser) { return parser->next(&parser->data); }
 
-static void next(Parser* parser) {
-    if (parser->cur < parser->size) {
-        parser->cur += 1;
-    }
+ParserStatus parser_current(Parser* parser, char* c) {
+    return parser->current(c, &parser->data);
 }
 
-static char parser_current(Parser* parser) {
-    if (parser->cur < parser->size) {
-        return parser->str[parser->cur];
-    } else {
-        return '\0';
-    }
-}
+ParserStatus parser_char(Parser* parser, char c) {
+    if (parser->lexer(parser) == PS_EndOfContent) return PS_EndOfContent;
 
-static int parser_lexeme(Parser* parser) {
     char n;
-    while ((n = parser_current(parser)) &&
-           (n == '#' || n == ' ' || n == '\n')) {
-        /* skip line comment */
-        if (n == '#') {
-            while ((n = parser_current(parser)) && n != '\n') next(parser);
+    if (parser_current(parser, &n) == PS_Success) {
+        if (n == c) {
+            parser_next(parser);
+            return PS_Success;
+        } else {
+            return PS_Failure;
         }
-
-        next(parser);
     }
-    return parser_current(parser) == '\0';
+    return PS_EndOfContent;
 }
 
-char parser_char(Parser* parser, char c) {
-    if (parser_lexeme(parser)) return 0;
+ParserStatus parser_word(Parser* parser, int (*separator)(char), char* word,
+                         size_t max_word_length) {
+    if (parser->lexer(parser) == PS_EndOfContent) return PS_EndOfContent;
 
     char n;
-    if ((n = parser_current(parser)) && n == c) {
-        next(parser);
-        return n;
+    size_t cnt = 0;
+
+    if (parser_current(parser, &n) != PS_Success || separator(n)) {
+        return PS_Failure;
     }
-    return '\0';
-}
 
-int parser_word(Parser* parser) {
-    if (parser_lexeme(parser)) return 0;
-
-    char n;
-    memset(P_WORD, 0, MAX_WORD_LENGTH);
-    int cnt = 0;
-
-    while ((n = parser_current(parser)) && n != ' ' && n != ';') {
-        if (cnt + 1 >= MAX_WORD_LENGTH) {
-            fprintf(stderr, "word too long %s", P_WORD);
-            exit(EXIT_FAILURE);
+    while (parser_current(parser, &n) == PS_Success && !separator(n)) {
+        if (cnt + 1 >= max_word_length) {
+            return PS_Failure;
         }
-        P_WORD[cnt++] = n;
-        next(parser);
+        word[cnt++] = n;
+        parser_next(parser);
     }
+    word[cnt] = '\0';
 
-    return cnt;
+    return PS_Success;
 }
+
+void parser_delete(Parser* parser) { free(parser); }

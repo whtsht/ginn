@@ -4,6 +4,7 @@
 typedef enum {
     StartCommand,
     StopCommand,
+    TestConfCommand,
 } Command;
 
 typedef struct {
