@@ -16,6 +16,13 @@ typedef struct {
     char cur;
 } File;
 
+typedef struct {
+    int desc;
+    // None => -1
+    // Some(c) => c
+    char cur;
+} Socket;
+
 typedef enum {
     ParserTypeString,
     ParserTypeFile,
@@ -25,7 +32,7 @@ typedef enum {
 typedef union {
     String string;
     File file;
-    int socket;
+    Socket socket;
 } ParserData;
 
 typedef enum {
@@ -49,9 +56,12 @@ Parser* parser_from_string(ParserStatus (*lexer)(struct Parser* parser),
                            char* string);
 Parser* parser_from_file(ParserStatus (*lexer)(struct Parser* parser),
                          FILE* file);
+Parser* parser_from_socket(ParserStatus (*lexer)(struct Parser* parser),
+                           int socket);
 ParserStatus parser_next(Parser* parser);
 ParserStatus parser_current(Parser* parser, char* c);
 ParserStatus parser_char(Parser* parser, char c);
+ParserStatus parser_string(Parser* parser, char* s);
 ParserStatus parser_word(Parser* parser, int (*separator)(char), char* word,
                          size_t max_word_length);
 void parser_delete(Parser* parser);

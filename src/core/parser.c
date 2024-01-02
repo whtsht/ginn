@@ -1,8 +1,10 @@
 #include "parser.h"
 
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 static ParserStatus next_string(ParserData* data) {
     if (data->string.cur + 1 < data->string.size) {
@@ -52,8 +54,12 @@ static ParserStatus next_file(ParserData* data) {
 }
 
 static ParserStatus current_file(char* c, ParserData* data) {
-    if (data->file.cur != -1 ||
-        (data->file.cur = fgetc(data->file.data)) != EOF) {
+    if (data->file.cur != -1) {
+        *c = data->file.cur;
+        return PS_Success;
+    }
+
+    if ((data->file.cur = fgetc(data->file.data)) != EOF) {
         *c = data->file.cur;
         return PS_Success;
     } else {
@@ -81,6 +87,53 @@ Parser* parser_from_file(ParserStatus (*lexer)(struct Parser* parser),
     return parser;
 }
 
+static ParserStatus next_socket(ParserData* data) {
+    char n;
+    ssize_t len;
+    if ((len = recv(data->socket.desc, &n, 1, 0)) != -1) {
+        if (len == 0) return PS_EndOfContent;
+
+        data->socket.cur = n;
+        return PS_Success;
+    } else {
+        return PS_Failure;
+    }
+}
+
+static ParserStatus current_socket(char* c, ParserData* data) {
+    if (data->socket.cur != -1) {
+        *c = data->socket.cur;
+        return PS_Success;
+    }
+
+    char n;
+    ssize_t len = 0;
+    if ((len = recv(data->socket.desc, &n, 1, 0)) != -1) {
+        if (len == 0) return PS_EndOfContent;
+
+        *c = data->socket.cur = n;
+        return PS_Success;
+    } else {
+        return PS_Failure;
+    }
+}
+
+Parser* parser_from_socket(ParserStatus (*lexer)(struct Parser* parser),
+                           int socket) {
+    Parser* parser = malloc(sizeof(Parser));
+    parser->next = next_socket;
+    parser->current = current_socket;
+    parser->lexer = lexer;
+    parser->type = ParserTypeSocket;
+    ParserData data;
+    data.socket = (Socket){
+        .desc = socket,
+        .cur = -1,
+    };
+    parser->data = data;
+    return parser;
+}
+
 ParserStatus parser_next(Parser* parser) { return parser->next(&parser->data); }
 
 ParserStatus parser_current(Parser* parser, char* c) {
@@ -102,16 +155,25 @@ ParserStatus parser_char(Parser* parser, char c) {
     return PS_EndOfContent;
 }
 
+ParserStatus parser_string(Parser* parser, char* s) {
+    if (parser->lexer(parser) == PS_EndOfContent) return PS_EndOfContent;
+
+    size_t len = strlen(s);
+    for (size_t i = 0; i < len; i++) {
+        if (parser_char(parser, s[i]) != PS_Success) {
+            return PS_Failure;
+        }
+    }
+
+    return PS_Success;
+}
+
 ParserStatus parser_word(Parser* parser, int (*separator)(char), char* word,
                          size_t max_word_length) {
     if (parser->lexer(parser) == PS_EndOfContent) return PS_EndOfContent;
 
     char n;
     size_t cnt = 0;
-
-    if (parser_current(parser, &n) != PS_Success || separator(n)) {
-        return PS_Failure;
-    }
 
     while (parser_current(parser, &n) == PS_Success && !separator(n)) {
         if (cnt + 1 >= max_word_length) {
@@ -125,10 +187,4 @@ ParserStatus parser_word(Parser* parser, int (*separator)(char), char* word,
     return PS_Success;
 }
 
-void parser_delete(Parser* parser) {
-    if (parser->type == ParserTypeFile) {
-        fclose(parser->data.file.data);
-    }
-
-    free(parser);
-}
+void parser_delete(Parser* parser) { free(parser); }

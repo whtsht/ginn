@@ -3,13 +3,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "../worker/server.h"
-#include "args.h"
-#include "config.h"
-#include "daemonize.h"
-#include "logger.h"
-#include "pidfile.h"
-#include "signal_handler.h"
+#include "./core/args.h"
+#include "./core/config.h"
+#include "./core/daemonize.h"
+#include "./core/logger.h"
+#include "./core/pidfile.h"
+#include "./core/signal_handler.h"
+#include "./worker/server.h"
 
 void check_permission() {
     if (!fopen(CONFIG.logfile, "a")) {

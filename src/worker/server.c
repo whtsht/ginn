@@ -2,13 +2,16 @@
 
 #include <errno.h>
 #include <netdb.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include "../core/logger.h"
+#include "../http/request.h"
 
-void send_recv_loop(int acc);
+void send_recv(int acc, char hbuf[NI_MAXHOST], char sbuf[NI_MAXSERV]);
 
 int server_socket(const char *portnm) {
     struct addrinfo hints;
@@ -86,9 +89,9 @@ void accept_loop(int soc) {
             (void)getnameinfo((struct sockaddr *)&from, len, hbuf, sizeof(hbuf),
                               sbuf, sizeof(sbuf),
                               NI_NUMERICHOST | NI_NUMERICSERV);
-            logging(LOG_DEBUG, "accept: %s:%s\n", hbuf, sbuf);
+            logging(LOG_INFO, "accept: %s:%s", hbuf, sbuf);
 
-            send_recv_loop(acc);
+            send_recv(acc, hbuf, sbuf);
 
             (void)close(acc);
             acc = 0;
@@ -96,31 +99,23 @@ void accept_loop(int soc) {
     }
 }
 
-void send_recv_loop(int acc) {
-    char buf[512], *ptr;
+void send_recv(int acc, char hbuf[NI_MAXHOST], char sbuf[NI_MAXSERV]) {
+    HTTPRequest *request = parse_http_request(acc);
+    if (!request) {
+        logging(LOG_INFO, "invalid request from %s:%s", hbuf, sbuf);
+    } else {
+        logging(LOG_DEBUG, "method: %d", request->method);
+        logging(LOG_DEBUG, "url: %s", request->url);
+        logging(LOG_DEBUG, "version: %s", request->version);
+    }
+
+    char buf[4096];
     ssize_t len;
-    for (;;) {
-        if ((len = recv(acc, buf, sizeof(buf), 0)) == -1) {
-            logging(LOG_ERROR, "recv: %s\n", strerror(errno));
-            break;
-        }
 
-        if (len == 0) {
-            logging(LOG_INFO, "recv: EOF");
-            break;
-        }
+    sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nHello World!");
 
-        buf[len] = '\0';
-        if ((ptr = strpbrk(buf, "\r\n")) != NULL) {
-            *ptr = '\0';
-        }
-        logging(LOG_INFO, "[client] %s", buf);
-
-        strncat(buf, ":OK\r\n", sizeof(buf) - strlen(buf) - 1);
-        len = (ssize_t)strlen(buf);
-        if ((len = send(acc, buf, (size_t)len, 0)) == -1) {
-            logging(LOG_ERROR, "send: %s\n", strerror(errno));
-            break;
-        }
+    len = (ssize_t)strlen(buf);
+    if ((len = send(acc, buf, (size_t)len, 0)) == -1) {
+        logging(LOG_ERROR, "send: %s\n", strerror(errno));
     }
 }

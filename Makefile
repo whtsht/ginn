@@ -4,7 +4,7 @@ OBJDIR := obj
 BINDIR := bin
 
 EXE := $(BINDIR)/$(TARGET)
-SRC := $(wildcard $(SRCDIR)/**/*.c)
+SRC := $(wildcard $(SRCDIR)/**/*.c $(SRCDIR)/main.c)
 OBJ := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o, $(SRC))
 SRCDIRS := $(sort $(dir $(SRC)))
 OBJDIRS := $(patsubst $(SRCDIR)%,$(OBJDIR)%,$(SRCDIRS))
