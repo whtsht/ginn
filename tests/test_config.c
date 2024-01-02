@@ -16,11 +16,11 @@ void config_success() {
 void config_failure() {
     ConfigResult result;
 
-    // result = load_config("./tests/conf/ginn.failure1.conf");
-    // CU_ASSERT_EQUAL(result, CR_Failure);
+    result = load_config("./tests/conf/ginn.failure1.conf");
+    CU_ASSERT_EQUAL(result, CR_Failure);
 
-    // result = load_config("./tests/conf/ginn.failure2.conf");
-    // CU_ASSERT_EQUAL(result, CR_Failure);
+    result = load_config("./tests/conf/ginn.failure2.conf");
+    CU_ASSERT_EQUAL(result, CR_Failure);
 
     result = load_config("./tests/conf/ginn.failure3.conf");
     CU_ASSERT_EQUAL(result, CR_Failure);

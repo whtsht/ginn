@@ -35,7 +35,8 @@ static int separator(char c) { return c == ';' || c == ' ' || c == '\n'; }
 static int space(char c) { return c == ' '; }
 
 static ConfigResult parser_logfile(Parser* parser, char* filename) {
-    if (parser_word(parser, separator, filename, NAME_MAX) != PS_Success) {
+    if (parser_word(parser, separator, filename, NAME_MAX) != PS_Success ||
+        strlen(filename) == 0) {
         fprintf(stderr, "logfile: expected filename\n");
         return CR_Failure;
     }
@@ -49,7 +50,8 @@ static ConfigResult parser_logfile(Parser* parser, char* filename) {
 }
 
 static ConfigResult parser_pidfile(Parser* parser, char* filename) {
-    if (parser_word(parser, separator, filename, NAME_MAX) != PS_Success) {
+    if (parser_word(parser, separator, filename, NAME_MAX) != PS_Success ||
+        strlen(filename) == 0) {
         fprintf(stderr, "pidfile: expected filename\n");
         return CR_Failure;
     }
