@@ -22,6 +22,6 @@ typedef struct {
 } HTTPRequest;
 
 ParserStatus http_lexer(Parser* parser);
-HTTPRequest* parse_http_request(int socket);
+HTTPRequest* parse_http_request(Parser* parser);
 
 #endif

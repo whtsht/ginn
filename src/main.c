@@ -75,7 +75,9 @@ void stop() {
 
 int main(int argc, char* argv[]) {
     Args args = parse_args(argc, argv);
-    load_config(args.conf_file);
+    if (load_config(args.conf_file)) {
+        exit(EXIT_FAILURE);
+    }
 
     switch (args.command) {
         case StartCommand: {

@@ -14,9 +14,7 @@ ParserStatus http_lexer(Parser* parser) {
 
 static int separator(char c) { return c == ' ' || c == '\r' || c == '\n'; }
 
-HTTPRequest* parse_http_request(int socket) {
-    Parser* parser = parser_from_socket(http_lexer, socket);
-
+HTTPRequest* parse_http_request(Parser* parser) {
     /* Method */
     char method_str[METHOD_MAX_LENGTH];
     if (parser_word(parser, separator, method_str, METHOD_MAX_LENGTH) !=

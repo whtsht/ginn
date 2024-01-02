@@ -100,7 +100,8 @@ void accept_loop(int soc) {
 }
 
 void send_recv(int acc, char hbuf[NI_MAXHOST], char sbuf[NI_MAXSERV]) {
-    HTTPRequest *request = parse_http_request(acc);
+    Parser *parser = parser_from_socket(http_lexer, acc);
+    HTTPRequest *request = parse_http_request(parser);
     if (!request) {
         logging(LOG_INFO, "invalid request from %s:%s", hbuf, sbuf);
     } else {
