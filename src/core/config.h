@@ -5,9 +5,18 @@
 #define DIRECTIVE_MAX 100
 
 typedef struct {
+    int code;
+    char* path;
+} ErrorPage;
+
+typedef struct {
     char* logfile;
     char* pidfile;
     char* port;
+    char* root;
+    char* index;
+    ErrorPage* error_pages;
+    int error_pages_len;
 } Config;
 
 typedef enum {

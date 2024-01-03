@@ -143,4 +143,6 @@ void print_config() {
     printf("\tlogfile\t= %s\n", CONFIG.logfile);
     printf("\tpidfile\t= %s\n", CONFIG.pidfile);
     printf("\tport\t= %s\n", CONFIG.port);
+    printf("\troot\t= %s\n", CONFIG.root);
+    printf("\tindex\t= %s\n", CONFIG.index);
 }

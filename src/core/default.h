@@ -7,4 +7,6 @@
 Config default_config();
 Args default_args();
 
+char* default_error_pages(int error_code);
+
 #endif

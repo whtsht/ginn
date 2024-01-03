@@ -11,6 +11,7 @@
 #include "../core/logger.h"
 #include "../http/request.h"
 #include "../http/response.h"
+#include "../http/route.h"
 
 void send_recv(int acc, char hbuf[NI_MAXHOST], char sbuf[NI_MAXSERV]);
 
@@ -115,17 +116,14 @@ void send_recv(int acc, char hbuf[NI_MAXHOST], char sbuf[NI_MAXSERV]) {
     if (fp == NULL) {
         logging(LOG_DEBUG, "failed to open file");
     }
-    HTTPResponse response = (HTTPResponse){
-        .status = HS_OK,
-        .protocol = NULL,
-        .headers = NULL,
-        .header_length = 0,
-        .body = (HTTPResponseBody){.file = fp},
-    };
-    if (send_http_response(&response, acc)) {
+    HTTPResponse *response = route(request);
+    if (!response) {
+        logging(LOG_DEBUG, "failed to route");
+    } else if (send_http_response(response, acc)) {
         logging(LOG_DEBUG, "failed to send http response");
     } else {
         logging(LOG_DEBUG, "send http response");
     }
+
     fclose(fp);
 }
