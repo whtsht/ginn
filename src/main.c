@@ -3,13 +3,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "./core/args.h"
-#include "./core/config.h"
-#include "./core/daemonize.h"
-#include "./core/logger.h"
-#include "./core/pidfile.h"
-#include "./core/signal_handler.h"
-#include "./worker/server.h"
+#include "core/args.h"
+#include "core/config.h"
+#include "core/daemonize.h"
+#include "core/logger.h"
+#include "core/pidfile.h"
+#include "core/signal_handler.h"
+#include "worker/server.h"
 
 void check_permission() {
     if (!fopen(CONFIG.logfile, "a")) {
@@ -73,7 +73,7 @@ void stop() {
     }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     Args args = parse_args(argc, argv);
     if (load_config(args.conf_file)) {
         exit(EXIT_FAILURE);

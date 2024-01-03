@@ -5,7 +5,7 @@
 
 #include "../src/core/config.h"
 
-void config_success() {
+static void config_success() {
     ConfigResult result = load_config("./tests/conf/ginn.correct.conf");
     CU_ASSERT_EQUAL(result, CR_Success);
     CU_ASSERT_STRING_EQUAL(CONFIG.logfile, "./ginn.log");
@@ -13,7 +13,7 @@ void config_success() {
     CU_ASSERT_STRING_EQUAL(CONFIG.port, "8080");
 }
 
-void config_failure() {
+static void config_failure() {
     ConfigResult result;
 
     result = load_config("./tests/conf/ginn.failure1.conf");

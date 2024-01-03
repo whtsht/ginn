@@ -10,6 +10,7 @@
 
 #include "../core/logger.h"
 #include "../http/request.h"
+#include "../http/response.h"
 
 void send_recv(int acc, char hbuf[NI_MAXHOST], char sbuf[NI_MAXSERV]);
 
@@ -110,13 +111,21 @@ void send_recv(int acc, char hbuf[NI_MAXHOST], char sbuf[NI_MAXSERV]) {
         logging(LOG_DEBUG, "version: %s", request->version);
     }
 
-    char buf[4096];
-    ssize_t len;
-
-    sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nHello World!");
-
-    len = (ssize_t)strlen(buf);
-    if ((len = send(acc, buf, (size_t)len, 0)) == -1) {
-        logging(LOG_ERROR, "send: %s\n", strerror(errno));
+    FILE *fp = fopen("/usr/share/ginn/html/index.html", "r");
+    if (fp == NULL) {
+        logging(LOG_DEBUG, "failed to open file");
     }
+    HTTPResponse response = (HTTPResponse){
+        .status = HS_OK,
+        .protocol = NULL,
+        .headers = NULL,
+        .header_length = 0,
+        .body = (HTTPResponseBody){.file = fp},
+    };
+    if (send_http_response(&response, acc)) {
+        logging(LOG_DEBUG, "failed to send http response");
+    } else {
+        logging(LOG_DEBUG, "send http response");
+    }
+    fclose(fp);
 }

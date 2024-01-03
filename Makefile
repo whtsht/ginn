@@ -37,10 +37,10 @@ $(TEST_BIN): $(TEST_OBJ) | $(BINDIR)
 	$(CC) $^ -o $@ $(TESTLIBS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIRS)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) -DTEST $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/$(TESTDIR)/%.o: $(TESTDIR)/%.c | $(OBJDIRS)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) -DTEST $(CFLAGS) -c $< -o $@
 
 $(OBJDIRS) $(BINDIR):
 	mkdir -p $@

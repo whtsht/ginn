@@ -6,7 +6,7 @@
 #include "../src/core/parser.h"
 #include "../src/http/request.h"
 
-void get_request1(void) {
+static void get_request1() {
     Parser* parser = parser_from_string(http_lexer, "GET / HTTP/1.1\r\n");
     HTTPRequest* req = parse_http_request(parser);
 
