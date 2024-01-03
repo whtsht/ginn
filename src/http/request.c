@@ -50,10 +50,8 @@ HTTPRequest* parse_http_request(Parser* parser) {
 
     HTTPRequest* request = malloc(sizeof(HTTPRequest));
     request->method = method;
-    request->url = calloc(sizeof(char), strlen(url) + 1);
-    strcpy(request->url, url);
-    request->version = calloc(sizeof(char), strlen(version) + 1);
-    strcpy(request->version, version);
+    request->url = strdup(url);
+    request->version = strdup(version);
 
     return request;
 }

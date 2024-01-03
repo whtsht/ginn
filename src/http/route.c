@@ -22,7 +22,12 @@ static HTTPResponse* ok_response(FILE* fp) {
 static HTTPResponse* not_found_response() {
     char* filepath = calloc(sizeof(char), FILE_PATH_LENGTH);
     strcat(filepath, CONFIG.root);
-    strcat(filepath, default_error_pages(404));
+    char* error_page = get_error_page(404);
+    if (error_page) {
+        strcat(filepath, error_page);
+    } else {
+        strcat(filepath, server_error_page());
+    }
     FILE* fp = fopen(filepath, "r");
     if (fp) {
         HTTPResponse* response = malloc(sizeof(HTTPResponse));

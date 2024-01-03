@@ -26,6 +26,7 @@ typedef enum {
 
 ConfigResult load_config(const char* conf_file);
 void print_config();
+char* get_error_page(int error_code);
 
 extern Config CONFIG;
 

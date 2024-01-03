@@ -7,6 +7,7 @@
 
 #include "default.h"
 #include "parser.h"
+#include "streq.h"
 
 Config CONFIG;
 
@@ -35,7 +36,7 @@ static int separator(char c) { return c == ';' || c == ' ' || c == '\n'; }
 static int space(char c) { return c == ' '; }
 
 static ConfigResult parser_logfile(Parser* parser, char* filename) {
-    if (parser_word(parser, separator, filename, NAME_MAX) != PS_Success ||
+    if (parser_word(parser, separator, filename, PATH_MAX) != PS_Success ||
         strlen(filename) == 0) {
         fprintf(stderr, "logfile: expected filename\n");
         return CR_Failure;
@@ -50,7 +51,7 @@ static ConfigResult parser_logfile(Parser* parser, char* filename) {
 }
 
 static ConfigResult parser_pidfile(Parser* parser, char* filename) {
-    if (parser_word(parser, separator, filename, NAME_MAX) != PS_Success ||
+    if (parser_word(parser, separator, filename, PATH_MAX) != PS_Success ||
         strlen(filename) == 0) {
         fprintf(stderr, "pidfile: expected filename\n");
         return CR_Failure;
@@ -85,6 +86,38 @@ static ConfigResult parser_port(Parser* parser, char* port) {
     return CR_Success;
 }
 
+static ConfigResult parser_error_page(Parser* parser, ErrorPage* error_pages,
+                                      int* error_pages_len) {
+    char word[PATH_MAX];
+    int count = 0;
+    char* end;
+    while (parser_word(parser, separator, word, PATH_MAX) == PS_Success) {
+        int error_code = 0;
+        if (!(error_code = strtol(word, &end, 10))) {
+            break;
+        }
+        error_pages[count].code = error_code;
+        count += 1;
+    }
+
+    if (count == 0) {
+        fprintf(stderr, "error_page: expected status codes\n");
+        return CR_Failure;
+    }
+
+    *error_pages_len = count;
+    for (int i = 0; i < count; i++) {
+        error_pages->path = strdup(word);
+    }
+
+    if (parser_char(parser, ';') != PS_Success) {
+        fprintf(stderr, "error_page: expected `;`\n");
+        return CR_Failure;
+    }
+
+    return CR_Success;
+}
+
 ConfigResult load_config(const char* conf_file) {
     Config config = default_config();
 
@@ -98,8 +131,8 @@ ConfigResult load_config(const char* conf_file) {
 
     char directive[DIRECTIVE_MAX];
     while (parser_word(parser, space, directive, DIRECTIVE_MAX) == PS_Success) {
-        if (strcmp(directive, "logfile") == 0) {
-            char* filename = malloc(sizeof(char) * NAME_MAX);
+        if (streq(directive, "logfile")) {
+            char* filename = malloc(sizeof(char) * PATH_MAX);
             if (parser_logfile(parser, filename)) {
                 free(filename);
                 return CR_Failure;
@@ -108,8 +141,8 @@ ConfigResult load_config(const char* conf_file) {
             continue;
         }
 
-        if (strcmp(directive, "pidfile") == 0) {
-            char* filename = malloc(sizeof(char) * NAME_MAX);
+        if (streq(directive, "pidfile")) {
+            char* filename = malloc(sizeof(char) * PATH_MAX);
             if (parser_pidfile(parser, filename)) {
                 free(filename);
                 return CR_Failure;
@@ -118,13 +151,25 @@ ConfigResult load_config(const char* conf_file) {
             continue;
         }
 
-        if (strcmp(directive, "port") == 0) {
+        if (streq(directive, "port")) {
             char* port = malloc(sizeof(char) * PORT_MAX);
             if (parser_port(parser, port)) {
                 free(port);
                 return CR_Failure;
             }
             config.port = port;
+            continue;
+        }
+
+        if (streq(directive, "error_page")) {
+            ErrorPage* error_pages = malloc(sizeof(ErrorPage) * 100);
+            int error_pages_len = 0;
+            if (parser_error_page(parser, error_pages, &error_pages_len)) {
+                free(error_pages);
+                return CR_Failure;
+            }
+            config.error_pages = error_pages;
+            config.error_pages_len = error_pages_len;
             continue;
         }
 
@@ -139,10 +184,20 @@ ConfigResult load_config(const char* conf_file) {
     return CR_Success;
 }
 
+char* get_error_page(int error_code) {
+    for (int i = 0; i < CONFIG.error_pages_len; i++) {
+        if (CONFIG.error_pages[i].code == error_code) {
+            return CONFIG.error_pages[i].path;
+        }
+    }
+    return NULL;
+}
+
 void print_config() {
     printf("\tlogfile\t= %s\n", CONFIG.logfile);
     printf("\tpidfile\t= %s\n", CONFIG.pidfile);
     printf("\tport\t= %s\n", CONFIG.port);
     printf("\troot\t= %s\n", CONFIG.root);
     printf("\tindex\t= %s\n", CONFIG.index);
+    printf("\t404_error_page\t= %s\n", get_error_page(404));
 }

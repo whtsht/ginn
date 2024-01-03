@@ -18,11 +18,4 @@ Args default_args() {
     return (Args){.command = StartCommand, .conf_file = "/etc/ginn.conf"};
 }
 
-char* default_error_pages(int error_code) {
-    switch (error_code) {
-        case 404:
-            return "/404.html";
-        default:
-            return NULL;
-    }
-}
+char* server_error_page() { return "/50x.html"; }

@@ -106,16 +106,13 @@ void send_recv(int acc, char hbuf[NI_MAXHOST], char sbuf[NI_MAXSERV]) {
     HTTPRequest *request = parse_http_request(parser);
     if (!request) {
         logging(LOG_INFO, "invalid request from %s:%s", hbuf, sbuf);
+        return;
     } else {
         logging(LOG_DEBUG, "method: %d", request->method);
         logging(LOG_DEBUG, "url: %s", request->url);
         logging(LOG_DEBUG, "version: %s", request->version);
     }
 
-    FILE *fp = fopen("/usr/share/ginn/html/index.html", "r");
-    if (fp == NULL) {
-        logging(LOG_DEBUG, "failed to open file");
-    }
     HTTPResponse *response = route(request);
     if (!response) {
         logging(LOG_DEBUG, "failed to route");
@@ -124,6 +121,4 @@ void send_recv(int acc, char hbuf[NI_MAXHOST], char sbuf[NI_MAXSERV]) {
     } else {
         logging(LOG_DEBUG, "send http response");
     }
-
-    fclose(fp);
 }
