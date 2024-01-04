@@ -18,7 +18,7 @@ typedef struct {
     char* url;
     char* version;
     HTTPHeader* headers;
-    int header_length;
+    size_t header_length;
 } HTTPRequest;
 
 ParserStatus http_lexer(Parser* parser);

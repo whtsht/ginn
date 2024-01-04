@@ -111,6 +111,10 @@ void send_recv(int acc, char hbuf[NI_MAXHOST], char sbuf[NI_MAXSERV]) {
         logging(LOG_DEBUG, "method: %d", request->method);
         logging(LOG_DEBUG, "url: %s", request->url);
         logging(LOG_DEBUG, "version: %s", request->version);
+        for (size_t i = 0; i < request->header_length; i++) {
+            logging(LOG_DEBUG, "header %ld: %s: %s", i,
+                    request->headers[i].field, request->headers[i].value);
+        }
     }
 
     HTTPResponse *response = route(request);

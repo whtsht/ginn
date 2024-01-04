@@ -103,13 +103,19 @@ static ParserStatus next_socket(ParserData* data) {
 static ParserStatus current_socket(char* c, ParserData* data) {
     if (data->socket.cur != -1) {
         *c = data->socket.cur;
+        if (!data->socket.cur) {
+            return PS_EndOfContent;
+        }
         return PS_Success;
     }
 
     char n;
     ssize_t len = 0;
     if ((len = recv(data->socket.desc, &n, 1, 0)) != -1) {
-        if (len == 0) return PS_EndOfContent;
+        if (len == 0) {
+            *c = data->socket.cur = '\0';
+            return PS_EndOfContent;
+        }
 
         *c = data->socket.cur = n;
         return PS_Success;
@@ -160,8 +166,11 @@ ParserStatus parser_string(Parser* parser, char* s) {
 
     size_t len = strlen(s);
     for (size_t i = 0; i < len; i++) {
-        if (parser_char(parser, s[i]) != PS_Success) {
+        ParserStatus ps = parser_char(parser, s[i]);
+        if (ps == PS_Failure) {
             return PS_Failure;
+        } else if (ps == PS_EndOfContent) {
+            return PS_EndOfContent;
         }
     }
 

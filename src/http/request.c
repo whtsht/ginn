@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "header.h"
+
 ParserStatus http_lexer(Parser* parser) {
     char n;
     while (parser_current(parser, &n) == PS_Success && n == ' ') {
@@ -48,10 +50,18 @@ HTTPRequest* parse_http_request(Parser* parser) {
         return NULL;
     }
 
+    HTTPHeader* headers = NULL;
+    size_t header_length = 0;
+    if (parser_headers(parser, &headers, &header_length) != PS_Success) {
+        return NULL;
+    }
+
     HTTPRequest* request = malloc(sizeof(HTTPRequest));
     request->method = method;
     request->url = strdup(url);
     request->version = strdup(version);
+    request->headers = headers;
+    request->header_length = header_length;
 
     return request;
 }
