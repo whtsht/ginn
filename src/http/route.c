@@ -20,7 +20,7 @@ static HTTPResponse* ok_response(FILE* fp) {
 }
 
 static HTTPResponse* not_found_response() {
-    char* filepath = calloc(sizeof(char), FILE_PATH_LENGTH);
+    char filepath[FILE_PATH_LENGTH] = "";
     strcat(filepath, CONFIG.root);
     char* error_page = get_error_page(404);
     if (error_page) {
@@ -42,28 +42,34 @@ static HTTPResponse* not_found_response() {
     return NULL;
 }
 
+static void root_path(char* filepath) {
+    strcpy(filepath, "");
+    strcat(filepath, CONFIG.root);
+    strcat(filepath, "/");
+    strcat(filepath, CONFIG.index);
+}
+
+static void path(char* filepath, char* path) {
+    strcpy(filepath, "");
+    strcat(filepath, CONFIG.root);
+    strcat(filepath, path);
+}
+
 HTTPResponse* route(HTTPRequest* request) {
-    char* filepath = calloc(sizeof(char), FILE_PATH_LENGTH);
+    char filepath[FILE_PATH_LENGTH] = "";
+    FILE* fp;
+
     if (streq(request->url, "/")) {
-        strcat(filepath, CONFIG.root);
-        strcat(filepath, "/");
-        strcat(filepath, CONFIG.index);
-        FILE* fp = fopen(filepath, "r");
-        if (fp) {
-            free(filepath);
+        root_path(filepath);
+        if ((fp = fopen(filepath, "r"))) {
             return ok_response(fp);
         }
     }
 
-    strcat(filepath, CONFIG.root);
-    strcat(filepath, request->url);
-    FILE* fp = fopen(filepath, "r");
-    if (fp) {
-        free(filepath);
+    path(filepath, request->url);
+    if ((fp = fopen(filepath, "r"))) {
         return ok_response(fp);
     }
-
-    free(filepath);
 
     return not_found_response();
 }
