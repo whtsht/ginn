@@ -11,6 +11,7 @@ Config default_config() {
         .index = "index.html",
         .error_pages = NULL,
         .error_pages_len = 0,
+        .worker_connections = 1000,
     };
 }
 

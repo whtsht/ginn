@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "../core/config.h"
 #include "../core/logger.h"
 #include "../http/request.h"
 #include "../http/response.h"
@@ -81,11 +82,11 @@ void accept_loop(int soc) {
     char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
     struct sockaddr_storage from;
     socklen_t len = sizeof(from);
-    struct epoll_event events[MAX_MULTIPLICITY + 1];
+    struct epoll_event events[CONFIG.worker_connections + 1];
     int acc = 0;
 
     int epollfd;
-    if ((epollfd = epoll_create(MAX_MULTIPLICITY + 1)) == -1) {
+    if ((epollfd = epoll_create(CONFIG.worker_connections + 1)) == -1) {
         logging(LOG_ERROR, "epoll_create: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
@@ -102,8 +103,8 @@ void accept_loop(int soc) {
     int count = 0;
     for (;;) {
         int nfds;
-        switch ((nfds = epoll_wait(epollfd, events, MAX_MULTIPLICITY + 1,
-                                   10 * 1000))) {
+        switch ((nfds = epoll_wait(epollfd, events,
+                                   CONFIG.worker_connections + 1, 10 * 1000))) {
             case -1: {
                 logging(LOG_ERROR, "epoll_ctl: %s", strerror(errno));
                 exit(EXIT_FAILURE);
@@ -125,7 +126,7 @@ void accept_loop(int soc) {
                                         NI_NUMERICHOST | NI_NUMERICSERV);
                             logging(LOG_INFO, "accept: %s:%s", hbuf, sbuf);
 
-                            if (count + 1 >= MAX_MULTIPLICITY) {
+                            if (count >= CONFIG.worker_connections) {
                                 logging(LOG_WARNING,
                                         "connection is full : cannot accept");
                                 close(acc);

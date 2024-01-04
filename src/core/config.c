@@ -118,6 +118,43 @@ static ConfigResult parser_error_page(Parser* parser, ErrorPage* error_pages,
     return CR_Success;
 }
 
+static ConfigResult parser_worker_connections(Parser* parser,
+                                              int* worker_connections) {
+    char word[WORKER_CONNECTION_LENGTH];
+    if (parser_word(parser, separator, word, WORKER_CONNECTION_LENGTH) !=
+        PS_Success) {
+        fprintf(stderr,
+                "worker_connections: expected the number of connections\n");
+        return CR_Failure;
+    }
+
+    if (parser_char(parser, ';') != PS_Success) {
+        fprintf(stderr, "worker_connections: expected `;`\n");
+        return CR_Failure;
+    }
+
+    char* end;
+    int connections = strtol(word, &end, 10);
+    if (connections == 0 && end == word) {
+        fprintf(stderr,
+                "worker_connections: expected the number of connections, "
+                "found %s\n",
+                word);
+        return CR_Failure;
+    }
+
+    if (connections <= 0 || WORKER_CONNECTION_MAX < connections) {
+        fprintf(stderr,
+                "worker_connections: keep it within the range of 1 to %d",
+                WORKER_CONNECTION_MAX);
+        return CR_Failure;
+    }
+
+    *worker_connections = connections;
+
+    return CR_Success;
+}
+
 ConfigResult load_config(const char* conf_file) {
     Config config = default_config();
 
@@ -173,6 +210,15 @@ ConfigResult load_config(const char* conf_file) {
             continue;
         }
 
+        if (streq(directive, "worker_connections")) {
+            int worker_connections;
+            if (parser_worker_connections(parser, &worker_connections)) {
+                return CR_Failure;
+            }
+            config.worker_connections = worker_connections;
+            continue;
+        }
+
         fprintf(stderr, "invalid directive: %s\n", directive);
         return CR_Failure;
     }
@@ -200,4 +246,5 @@ void print_config() {
     printf("\troot\t= %s\n", CONFIG.root);
     printf("\tindex\t= %s\n", CONFIG.index);
     printf("\t404_error_page\t= %s\n", get_error_page(404));
+    printf("\tworker_connections\t= %d\n", CONFIG.worker_connections);
 }

@@ -3,6 +3,8 @@
 
 #define PORT_MAX 6
 #define DIRECTIVE_MAX 100
+#define WORKER_CONNECTION_MAX 10000
+#define WORKER_CONNECTION_LENGTH 10
 
 typedef struct {
     int code;
@@ -17,6 +19,7 @@ typedef struct {
     char* index;
     ErrorPage* error_pages;
     int error_pages_len;
+    int worker_connections;
 } Config;
 
 typedef enum {
