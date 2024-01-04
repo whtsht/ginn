@@ -64,6 +64,6 @@ ParserStatus parser_char(Parser* parser, char c);
 ParserStatus parser_string(Parser* parser, char* s);
 ParserStatus parser_word(Parser* parser, int (*separator)(char), char* word,
                          size_t max_word_length);
-void parser_delete(Parser* parser);
+void parser_free(Parser* parser);
 
 #endif

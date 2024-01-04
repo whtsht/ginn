@@ -38,7 +38,7 @@ int server_socket(const char *portnm) {
         exit(EXIT_FAILURE);
     }
 
-    logging(LOG_DEBUG, "port = %s\n", sbuf);
+    logging(LOG_DEBUG, "port = %s", sbuf);
 
     int soc;
     if ((soc = socket(res0->ai_family, res0->ai_socktype, res0->ai_protocol)) ==
@@ -106,23 +106,31 @@ void send_recv(int acc, char hbuf[NI_MAXHOST], char sbuf[NI_MAXSERV]) {
     HTTPRequest *request = parse_http_request(parser);
     if (!request) {
         logging(LOG_INFO, "invalid request from %s:%s", hbuf, sbuf);
+        parser_free(parser);
         return;
     } else {
-        logging(LOG_DEBUG, "method: %d", request->method);
-        logging(LOG_DEBUG, "url: %s", request->url);
-        logging(LOG_DEBUG, "version: %s", request->version);
+        logging(LOG_INFO, "[%s] %s %s", method_to_string(request->method),
+                request->url, request->version);
         for (size_t i = 0; i < request->header_length; i++) {
-            logging(LOG_DEBUG, "header %ld: %s: %s", i,
-                    request->headers[i].field, request->headers[i].value);
+            logging(LOG_INFO, "%s : %s", request->headers[i].field,
+                    request->headers[i].value);
         }
     }
 
     HTTPResponse *response = route(request);
     if (!response) {
         logging(LOG_DEBUG, "failed to route");
+        parser_free(parser);
+        request_free(request);
+        return;
     } else if (send_http_response(response, acc)) {
         logging(LOG_DEBUG, "failed to send http response");
-    } else {
-        logging(LOG_DEBUG, "send http response");
+        request_free(request);
+        response_free(response);
+        return;
     }
+
+    request_free(request);
+    response_free(response);
+    parser_free(parser);
 }

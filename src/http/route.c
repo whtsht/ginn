@@ -14,7 +14,7 @@ static HTTPResponse* ok_response(FILE* fp) {
     response->status = HS_OK;
     response->protocol = NULL;
     response->headers = NULL;
-    response->header_length = get_file_size(fp);
+    response->header_length = 0;
     response->body = (HTTPResponseBody){.file = fp};
     return response;
 }
@@ -34,7 +34,7 @@ static HTTPResponse* not_found_response() {
         response->status = HS_NotFound;
         response->protocol = NULL;
         response->headers = NULL;
-        response->header_length = get_file_size(fp);
+        response->header_length = 0;
         response->body = (HTTPResponseBody){.file = fp};
 
         return response;

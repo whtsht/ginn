@@ -196,4 +196,4 @@ ParserStatus parser_word(Parser* parser, int (*separator)(char), char* word,
     return PS_Success;
 }
 
-void parser_delete(Parser* parser) { free(parser); }
+void parser_free(Parser* parser) { free(parser); }

@@ -33,5 +33,6 @@ typedef struct {
 
 HTTPResponseResult send_http_response(HTTPResponse* response, int socket);
 size_t get_file_size(FILE* fp);
+void response_free(HTTPResponse* response);
 
 #endif

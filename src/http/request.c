@@ -65,3 +65,19 @@ HTTPRequest* parse_http_request(Parser* parser) {
 
     return request;
 }
+
+void request_free(HTTPRequest* request) {
+    free(request->url);
+    free(request->version);
+    headers_free(request->headers, request->header_length);
+    free(request);
+}
+
+char* method_to_string(HTTPRequestMethod method) {
+    switch (method) {
+        case GETMethod:
+            return "GET";
+        case HEADMethod:
+            return "HEAD";
+    }
+}

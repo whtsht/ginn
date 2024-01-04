@@ -177,7 +177,7 @@ ConfigResult load_config(const char* conf_file) {
         return CR_Failure;
     }
 
-    parser_delete(parser);
+    parser_free(parser);
 
     CONFIG = config;
 

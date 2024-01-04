@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "../core/logger.h"
+#include "header.h"
 
 static char* status_to_string(HTTPStatus status) {
     switch (status) {
@@ -72,4 +73,10 @@ HTTPResponseResult send_http_response(HTTPResponse* response, int socket) {
     } while (cnt == 1000);
 
     return HRR_Success;
+}
+
+void response_free(HTTPResponse* response) {
+    headers_free(response->headers, response->header_length);
+    fclose(response->body.file);
+    free(response);
 }

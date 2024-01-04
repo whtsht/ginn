@@ -1,8 +1,8 @@
 #ifndef HTTP_HEADER_H
 #define HTTP_HEADER_H
 
-#define MAX_HEADER_FIELD 1024
-#define MAX_HEADER_VALUE 1024
+#define MAX_HEADER_FIELD 256
+#define MAX_HEADER_VALUE 512
 #define MAX_CLIENT_HEADERS 20
 
 #include "../core/parser.h"
