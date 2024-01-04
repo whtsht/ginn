@@ -78,6 +78,49 @@ int server_socket(const char *portnm) {
     return soc;
 }
 
+static int accept_connection(int soc, int acc, struct sockaddr_storage from,
+                             int epollfd, struct epoll_event ev, int count) {
+    socklen_t len = sizeof(from);
+    char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
+    if ((acc = accept(soc, (struct sockaddr *)&from, &len)) == -1) {
+        if (errno != EINTR) {
+            logging(LOG_ERROR, "accept: %s", strerror(errno));
+        }
+    } else {
+        getnameinfo((struct sockaddr *)&from, len, hbuf, sizeof(hbuf), sbuf,
+                    sizeof(sbuf), NI_NUMERICHOST | NI_NUMERICSERV);
+        logging(LOG_INFO, "accept: %s:%s", hbuf, sbuf);
+
+        if (count >= CONFIG.worker_connections) {
+            logging(LOG_WARNING, "connection is full : cannot accept");
+            close(acc);
+        } else {
+            ev.data.fd = acc;
+            ev.events = EPOLLIN;
+            if (epoll_ctl(epollfd, EPOLL_CTL_ADD, acc, &ev) == -1) {
+                logging(LOG_ERROR, "epoll_ctl: %s", strerror(errno));
+                close(acc);
+                close(epollfd);
+            } else {
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+static void serve(int acc, int epollfd, struct epoll_event *ev) {
+    if (send_recv(acc) == -1) {
+        if (epoll_ctl(epollfd, EPOLL_CTL_DEL, acc, ev) == -1) {
+            logging(LOG_ERROR, "epoll_ctl: %s", strerror(errno));
+            close(acc);
+            close(epollfd);
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+
 void accept_loop(int soc) {
     char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
     struct sockaddr_storage from;
@@ -109,55 +152,21 @@ void accept_loop(int soc) {
                 logging(LOG_ERROR, "epoll_ctl: %s", strerror(errno));
                 exit(EXIT_FAILURE);
             }
-            case 0:
+            case 0: {
                 break;
-            default:
+            }
+            default: {
                 for (int i = 0; i < nfds; i++) {
                     if (events[i].data.fd == soc) {
-                        if ((acc = accept(soc, (struct sockaddr *)&from,
-                                          &len)) == -1) {
-                            if (errno != EINTR) {
-                                logging(LOG_ERROR, "accept: %s",
-                                        strerror(errno));
-                            }
-                        } else {
-                            getnameinfo((struct sockaddr *)&from, len, hbuf,
-                                        sizeof(hbuf), sbuf, sizeof(sbuf),
-                                        NI_NUMERICHOST | NI_NUMERICSERV);
-                            logging(LOG_INFO, "accept: %s:%s", hbuf, sbuf);
-
-                            if (count >= CONFIG.worker_connections) {
-                                logging(LOG_WARNING,
-                                        "connection is full : cannot accept");
-                                close(acc);
-                            } else {
-                                ev.data.fd = acc;
-                                ev.events = EPOLLIN;
-                                if (epoll_ctl(epollfd, EPOLL_CTL_ADD, acc,
-                                              &ev) == -1) {
-                                    perror("epoll_ctl");
-                                    close(acc);
-                                    close(epollfd);
-                                    return;
-                                }
-                                count++;
-                            }
-                        }
+                        count += accept_connection(soc, acc, from, epollfd, ev,
+                                                   count);
                     } else {
-                        if (send_recv(events[i].data.fd) == -1) {
-                            if (epoll_ctl(epollfd, EPOLL_CTL_DEL,
-                                          events[i].data.fd, &ev) == -1) {
-                                logging(LOG_ERROR, "epoll_ctl: %s",
-                                        strerror(errno));
-                                close(acc);
-                                close(epollfd);
-                                exit(EXIT_FAILURE);
-                            }
-                        }
+                        serve(events[i].data.fd, epollfd, &ev);
                         close(events[i].data.fd);
                         count--;
                     }
                 }
+            }
         }
     }
 }
