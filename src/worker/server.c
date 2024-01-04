@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -13,7 +14,7 @@
 #include "../http/response.h"
 #include "../http/route.h"
 
-void send_recv(int acc, char hbuf[NI_MAXHOST], char sbuf[NI_MAXSERV]);
+int send_recv(int acc);
 
 int server_socket(const char *portnm) {
     struct addrinfo hints;
@@ -25,7 +26,7 @@ int server_socket(const char *portnm) {
     int errcode;
     struct addrinfo *res0;
     if ((errcode = getaddrinfo(NULL, portnm, &hints, &res0)) != 0) {
-        logging(LOG_ERROR, "getaddrinfo: %s\n", gai_strerror(errcode));
+        logging(LOG_ERROR, "getaddrinfo: %s", gai_strerror(errcode));
         exit(EXIT_FAILURE);
     }
 
@@ -33,7 +34,7 @@ int server_socket(const char *portnm) {
     if ((errcode = getnameinfo(res0->ai_addr, res0->ai_addrlen, nbuf,
                                sizeof(nbuf), sbuf, sizeof(sbuf),
                                NI_NUMERICHOST | NI_NUMERICSERV)) != 0) {
-        logging(LOG_ERROR, "getnameinfo: %s\n", gai_strerror(errcode));
+        logging(LOG_ERROR, "getnameinfo: %s", gai_strerror(errcode));
         freeaddrinfo(res0);
         exit(EXIT_FAILURE);
     }
@@ -43,7 +44,7 @@ int server_socket(const char *portnm) {
     int soc;
     if ((soc = socket(res0->ai_family, res0->ai_socktype, res0->ai_protocol)) ==
         -1) {
-        logging(LOG_ERROR, "socket: %s\n", strerror(errno));
+        logging(LOG_ERROR, "socket: %s", strerror(errno));
         freeaddrinfo(res0);
         exit(EXIT_FAILURE);
     }
@@ -51,21 +52,21 @@ int server_socket(const char *portnm) {
     int opt = 1;
     int opt_len = sizeof(opt);
     if (setsockopt(soc, SOL_SOCKET, SO_REUSEADDR, &opt, opt_len) == -1) {
-        logging(LOG_ERROR, "setsockopt: %s\n", strerror(errno));
+        logging(LOG_ERROR, "setsockopt: %s", strerror(errno));
         close(soc);
         freeaddrinfo(res0);
         exit(EXIT_FAILURE);
     }
 
     if (bind(soc, res0->ai_addr, res0->ai_addrlen) == -1) {
-        logging(LOG_ERROR, "bind: %s\n", strerror(errno));
+        logging(LOG_ERROR, "bind: %s", strerror(errno));
         close(soc);
         freeaddrinfo(res0);
         exit(EXIT_FAILURE);
     }
 
     if (listen(soc, SOMAXCONN) == -1) {
-        logging(LOG_ERROR, "listen: %s\n", strerror(errno));
+        logging(LOG_ERROR, "listen: %s", strerror(errno));
         close(soc);
         freeaddrinfo(res0);
         exit(EXIT_FAILURE);
@@ -79,35 +80,95 @@ int server_socket(const char *portnm) {
 void accept_loop(int soc) {
     char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
     struct sockaddr_storage from;
-    int acc;
-    socklen_t len;
+    socklen_t len = sizeof(from);
+    struct epoll_event events[MAX_MULTIPLICITY + 1];
+    int acc = 0;
+
+    int epollfd;
+    if ((epollfd = epoll_create(MAX_MULTIPLICITY + 1)) == -1) {
+        logging(LOG_ERROR, "epoll_create: %s", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    struct epoll_event ev;
+    ev.data.fd = soc;
+    ev.events = EPOLLIN;
+    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, soc, &ev) == -1) {
+        logging(LOG_ERROR, "epoll_ctl: %s", strerror(errno));
+        close(epollfd);
+        exit(EXIT_FAILURE);
+    }
+
+    int count = 0;
     for (;;) {
-        len = (socklen_t)sizeof(from);
-        if ((acc = accept(soc, (struct sockaddr *)&from, &len)) == -1) {
-            if (errno != EINTR) {
-                logging(LOG_ERROR, "accept: %s\n", strerror(errno));
+        int nfds;
+        switch ((nfds = epoll_wait(epollfd, events, MAX_MULTIPLICITY + 1,
+                                   10 * 1000))) {
+            case -1: {
+                logging(LOG_ERROR, "epoll_ctl: %s", strerror(errno));
+                exit(EXIT_FAILURE);
             }
-        } else {
-            (void)getnameinfo((struct sockaddr *)&from, len, hbuf, sizeof(hbuf),
-                              sbuf, sizeof(sbuf),
-                              NI_NUMERICHOST | NI_NUMERICSERV);
-            logging(LOG_INFO, "accept: %s:%s", hbuf, sbuf);
+            case 0:
+                break;
+            default:
+                for (int i = 0; i < nfds; i++) {
+                    if (events[i].data.fd == soc) {
+                        if ((acc = accept(soc, (struct sockaddr *)&from,
+                                          &len)) == -1) {
+                            if (errno != EINTR) {
+                                logging(LOG_ERROR, "accept: %s",
+                                        strerror(errno));
+                            }
+                        } else {
+                            getnameinfo((struct sockaddr *)&from, len, hbuf,
+                                        sizeof(hbuf), sbuf, sizeof(sbuf),
+                                        NI_NUMERICHOST | NI_NUMERICSERV);
+                            logging(LOG_INFO, "accept: %s:%s", hbuf, sbuf);
 
-            send_recv(acc, hbuf, sbuf);
-
-            (void)close(acc);
-            acc = 0;
+                            if (count + 1 >= MAX_MULTIPLICITY) {
+                                logging(LOG_WARNING,
+                                        "connection is full : cannot accept");
+                                close(acc);
+                            } else {
+                                ev.data.fd = acc;
+                                ev.events = EPOLLIN;
+                                if (epoll_ctl(epollfd, EPOLL_CTL_ADD, acc,
+                                              &ev) == -1) {
+                                    perror("epoll_ctl");
+                                    close(acc);
+                                    close(epollfd);
+                                    return;
+                                }
+                                count++;
+                            }
+                        }
+                    } else {
+                        if (send_recv(events[i].data.fd) == -1) {
+                            if (epoll_ctl(epollfd, EPOLL_CTL_DEL,
+                                          events[i].data.fd, &ev) == -1) {
+                                logging(LOG_ERROR, "epoll_ctl: %s",
+                                        strerror(errno));
+                                close(acc);
+                                close(epollfd);
+                                exit(EXIT_FAILURE);
+                            }
+                        }
+                        close(events[i].data.fd);
+                        count--;
+                    }
+                }
         }
     }
 }
 
-void send_recv(int acc, char hbuf[NI_MAXHOST], char sbuf[NI_MAXSERV]) {
+int send_recv(int acc) {
+    logging(LOG_INFO, "send_recv");
     Parser *parser = parser_from_socket(http_lexer, acc);
     HTTPRequest *request = parse_http_request(parser);
     if (!request) {
-        logging(LOG_INFO, "invalid request from %s:%s", hbuf, sbuf);
+        logging(LOG_INFO, "invalid request");
         parser_free(parser);
-        return;
+        return -1;
     } else {
         logging(LOG_INFO, "[%s] %s %s", method_to_string(request->method),
                 request->url, request->version);
@@ -122,15 +183,16 @@ void send_recv(int acc, char hbuf[NI_MAXHOST], char sbuf[NI_MAXSERV]) {
         logging(LOG_DEBUG, "failed to route");
         parser_free(parser);
         request_free(request);
-        return;
+        return -1;
     } else if (send_http_response(response, acc)) {
         logging(LOG_DEBUG, "failed to send http response");
         request_free(request);
         response_free(response);
-        return;
+        return -1;
     }
 
     request_free(request);
     response_free(response);
     parser_free(parser);
+    return 0;
 }

@@ -80,4 +80,7 @@ char* method_to_string(HTTPRequestMethod method) {
         case HEADMethod:
             return "HEAD";
     }
+
+    /* unreachable */
+    return NULL;
 }

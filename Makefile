@@ -37,7 +37,7 @@ $(TEST_BIN): $(TEST_OBJ) | $(BINDIR)
 	$(CC) $^ -o $@ $(TESTLIBS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIRS)
-	$(CC) -DTEST $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/$(TESTDIR)/%.o: $(TESTDIR)/%.c | $(OBJDIRS)
 	$(CC) -DTEST $(CFLAGS) -c $< -o $@
