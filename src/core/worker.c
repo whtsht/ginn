@@ -167,6 +167,8 @@ void accept_loop(int soc) {
 
                 if (count == 0) {
                     remove_worker_info(pthread_self());
+                    close(epollfd);
+                    close(soc);
                     logging(LOG_DEBUG, "worker: exit");
                     pthread_exit(NULL);
                 }
@@ -187,6 +189,8 @@ void accept_loop(int soc) {
                         if (get_worker_info(pthread_self()).is_shutdown &&
                             count == 0) {
                             remove_worker_info(pthread_self());
+                            close(epollfd);
+                            close(soc);
                             logging(LOG_DEBUG, "worker: exit");
                             pthread_exit(NULL);
                         }
@@ -209,7 +213,7 @@ int send_recv(int acc) {
         logging(LOG_INFO, "[%s] %s %s", method_to_string(request->method),
                 request->url, request->version);
         for (size_t i = 0; i < request->header_length; i++) {
-            logging(LOG_INFO, "%s : %s", request->headers[i].field,
+            logging(LOG_INFO, "[header] %s : %s", request->headers[i].field,
                     request->headers[i].value);
         }
     }
