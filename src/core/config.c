@@ -155,6 +155,41 @@ static ConfigResult parser_worker_connections(Parser* parser,
     return CR_Success;
 }
 
+static ConfigResult parser_worker_processes(Parser* parser,
+                                            int* worker_processes) {
+    char word[WORKER_PROCESSES_LENGTH];
+    if (parser_word(parser, separator, word, WORKER_PROCESSES_LENGTH) !=
+        PS_Success) {
+        fprintf(stderr, "worker_processes: expected the number of processes\n");
+        return CR_Failure;
+    }
+
+    if (parser_char(parser, ';') != PS_Success) {
+        fprintf(stderr, "worker_processes: expected `;`\n");
+        return CR_Failure;
+    }
+
+    char* end;
+    int processes = strtol(word, &end, 10);
+    if (processes == 0 && end == word) {
+        fprintf(stderr,
+                "worker_processes: expected the number of processes, "
+                "found %s\n",
+                word);
+        return CR_Failure;
+    }
+
+    if (processes <= 0 || WORKER_PROCESSES_MAX < processes) {
+        fprintf(stderr, "worker_processes: keep it within the range of 1 to %d",
+                WORKER_PROCESSES_MAX);
+        return CR_Failure;
+    }
+
+    *worker_processes = processes;
+
+    return CR_Success;
+}
+
 ConfigResult load_config(const char* conf_file) {
     Config config = default_config();
 
@@ -219,6 +254,15 @@ ConfigResult load_config(const char* conf_file) {
             continue;
         }
 
+        if (streq(directive, "worker_processes")) {
+            int worker_processes;
+            if (parser_worker_processes(parser, &worker_processes)) {
+                return CR_Failure;
+            }
+            config.worker_processes = worker_processes;
+            continue;
+        }
+
         fprintf(stderr, "invalid directive: %s\n", directive);
         return CR_Failure;
     }
@@ -247,4 +291,5 @@ void print_config() {
     printf("\tindex\t= %s\n", CONFIG.index);
     printf("\t404_error_page\t= %s\n", get_error_page(404));
     printf("\tworker_connections\t= %d\n", CONFIG.worker_connections);
+    printf("\tworker_processes\t= %d\n", CONFIG.worker_processes);
 }

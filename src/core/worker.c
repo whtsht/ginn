@@ -1,5 +1,3 @@
-#include "server.h"
-
 #include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -9,11 +7,11 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "../core/config.h"
-#include "../core/logger.h"
 #include "../http/request.h"
 #include "../http/response.h"
 #include "../http/route.h"
+#include "config.h"
+#include "logger.h"
 
 int send_recv(int acc);
 
