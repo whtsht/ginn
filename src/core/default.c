@@ -6,7 +6,7 @@ Config default_config() {
     return (Config){
         .logfile = "/var/log/ginn.log",
         .pidfile = "/var/run/ginn.pid",
-        .port = "4700",
+        .port = "80",
         .root = "/usr/share/ginn/html",
         .index = "index.html",
         .error_pages = NULL,
