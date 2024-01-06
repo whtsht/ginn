@@ -1,4 +1,5 @@
-#include <pthread.h>
+#include "master.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -12,7 +13,7 @@
 
 void check_permission();
 
-pthread_t worker;
+ThreadStore THREAD_STORE = {};
 
 void worker_start() {
     int soc = server_socket(CONFIG.port);
@@ -53,7 +54,15 @@ void master_start() {
         exit(EXIT_FAILURE);
     }
 
-    pthread_create(&worker, NULL, (void *)worker_start, NULL);
+    THREAD_STORE.threads_count = CONFIG.worker_processes;
+    THREAD_STORE.threads =
+        malloc(sizeof(pthread_t) * THREAD_STORE.threads_count);
+
+    for (int i = 0; i < THREAD_STORE.threads_count; i++) {
+        pthread_t thread;
+        pthread_create(&thread, NULL, (void *)worker_start, NULL);
+        THREAD_STORE.threads[i] = thread;
+    }
 
     for (;;) {
         sleep(10);

@@ -50,7 +50,7 @@ int server_socket(const char *portnm) {
 
     int opt = 1;
     int opt_len = sizeof(opt);
-    if (setsockopt(soc, SOL_SOCKET, SO_REUSEADDR, &opt, opt_len) == -1) {
+    if (setsockopt(soc, SOL_SOCKET, SO_REUSEPORT, &opt, opt_len) == -1) {
         logging(LOG_ERROR, "setsockopt: %s", strerror(errno));
         close(soc);
         freeaddrinfo(res0);
@@ -120,9 +120,7 @@ static void serve(int acc, int epollfd, struct epoll_event *ev) {
 }
 
 void accept_loop(int soc) {
-    char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
     struct sockaddr_storage from;
-    socklen_t len = sizeof(from);
     struct epoll_event events[CONFIG.worker_connections + 1];
     int acc = 0;
 

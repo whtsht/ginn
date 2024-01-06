@@ -3,7 +3,10 @@
 
 #include <pthread.h>
 
-extern pthread_t worker;
+typedef struct {
+    pthread_t* threads;
+    int threads_count;
+} ThreadStore;
 
 void master_start();
 
