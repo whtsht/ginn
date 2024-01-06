@@ -16,7 +16,9 @@ Config default_config() {
 }
 
 Args default_args() {
-    return (Args){.command = StartCommand, .conf_file = "/etc/ginn.conf"};
+    return (Args){.command = StartCommand,
+                  .conf_file = "/etc/ginn.conf",
+                  .daemon_off = 0};
 }
 
 char* server_error_page() { return "/50x.html"; }

@@ -11,6 +11,7 @@ typedef enum {
 typedef struct {
     Command command;
     char* conf_file;
+    int daemon_off;
 } Args;
 
 Args parse_args(int argc, char* argv[]);

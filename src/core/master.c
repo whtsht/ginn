@@ -74,7 +74,7 @@ void swap_threads() {
     free(THREAD_STORE.new_threads);
 }
 
-void master_start() {
+void master_start(int daemon_off) {
     check_permission();
 
     int pid;
@@ -83,15 +83,17 @@ void master_start() {
         exit(EXIT_FAILURE);
     }
 
-    pid = fork();
-    if (pid < 0) {
-        perror("fork");
-        exit(EXIT_FAILURE);
+    if (!daemon_off) {
+        pid = fork();
+        if (pid < 0) {
+            perror("fork");
+            exit(EXIT_FAILURE);
+        }
+
+        if (pid > 0) exit(EXIT_SUCCESS);
+
+        daemonize();
     }
-
-    if (pid > 0) exit(EXIT_SUCCESS);
-
-    daemonize();
 
     init_signal_handler();
 

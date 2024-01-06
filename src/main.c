@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 
     switch (args.command) {
         case StartCommand: {
-            master_start();
+            master_start(args.daemon_off);
             break;
         }
         case StopCommand: {

@@ -13,7 +13,7 @@ typedef struct {
 extern ThreadStore THREAD_STORE;
 extern pthread_t MASTER;
 
-void master_start();
+void master_start(int daemon_off);
 void worker_start();
 
 void init_threads();
