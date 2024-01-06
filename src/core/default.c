@@ -7,7 +7,7 @@ Config default_config() {
         .logfile = "/var/log/ginn.log",
         .pidfile = "/var/run/ginn.pid",
         .port = "80",
-        .root = "/usr/share/ginn/html",
+        .root = "/usr/share/ginn/public",
         .index = "index.html",
         .error_pages = NULL,
         .error_pages_len = 0,

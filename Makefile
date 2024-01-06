@@ -52,4 +52,12 @@ clean:
 	$(RM) -rv $(BINDIR) $(OBJDIR)
 	$(RM) -rv $(TARGET)
 
+install: ginn
+	mkdir -p /usr/share/ginn/public
+	mkdir -p /var/log/
+	mkdir -p /var/run/
+	cp ./ginn /bin
+	cp -r ./public /usr/share/ginn
+	cp ./ginn.conf /etc/ginn.conf
+
 .PHONY: all
