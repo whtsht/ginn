@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "../util/daemonize.h"
+#include "../util/logger.h"
+#include "../util/pidfile.h"
 #include "config.h"
-#include "daemonize.h"
-#include "logger.h"
-#include "pidfile.h"
 #include "signal_handler.h"
 #include "worker.h"
 

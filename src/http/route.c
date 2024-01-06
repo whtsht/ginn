@@ -6,7 +6,7 @@
 
 #include "../core/config.h"
 #include "../core/default.h"
-#include "../core/streq.h"
+#include "../util/streq.h"
 #include "response.h"
 
 static HTTPResponse* ok_response(FILE* fp) {

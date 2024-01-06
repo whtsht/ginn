@@ -5,7 +5,7 @@
 #define MAX_HEADER_VALUE 512
 #define MAX_CLIENT_HEADERS 20
 
-#include "../core/parser.h"
+#include "../util/parser.h"
 
 typedef struct {
     char* field;

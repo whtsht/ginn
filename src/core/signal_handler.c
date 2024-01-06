@@ -1,7 +1,7 @@
 #include <signal.h>
 #include <stdlib.h>
 
-#include "logger.h"
+#include "../util/logger.h"
 
 static void sig_int_handler() {
     logging(LOG_INFO, "good bye :)\n");

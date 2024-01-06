@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "../core/logger.h"
+#include "../util/logger.h"
 #include "header.h"
 
 static char* status_to_string(HTTPStatus status) {

@@ -1,7 +1,7 @@
 #ifndef HTTP_REQUEST_H
 #define HTTP_REQUEST_H
 
-#include "../core/parser.h"
+#include "../util/parser.h"
 #include "header.h"
 
 #define METHOD_MAX_LENGTH 10

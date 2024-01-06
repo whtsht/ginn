@@ -6,7 +6,7 @@
 #include "core/args.h"
 #include "core/config.h"
 #include "core/master.h"
-#include "core/pidfile.h"
+#include "util/pidfile.h"
 
 void check_permission() {
     if (!fopen(CONFIG.logfile, "a")) {

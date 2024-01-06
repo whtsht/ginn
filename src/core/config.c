@@ -5,9 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../util/parser.h"
+#include "../util/streq.h"
 #include "default.h"
-#include "parser.h"
-#include "streq.h"
 
 Config CONFIG;
 
