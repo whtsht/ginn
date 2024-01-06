@@ -1,3 +1,4 @@
+#include <linux/limits.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,10 +26,25 @@ void stop() {
 
     int pid;
     if ((pid = check_pid(CONFIG.pidfile))) {
-        kill(pid, SIGINT);
+        kill(pid, SIGTERM);
         remove_pid(CONFIG.pidfile);
     } else {
-        printf("not found %d\n", pid);
+        puts("ginn is not running");
+    }
+}
+
+void reload(char *conf_file) {
+    check_permission();
+
+    int pid;
+    if ((pid = check_pid(CONFIG.pidfile))) {
+        size_t size = PATH_MAX + 18;
+        char buf[size];
+        snprintf(buf, size, "cp %s /tmp/ginn.conf", conf_file);
+        system(buf);
+        kill(pid, SIGHUP);
+    } else {
+        puts("ginn is not running");
     }
 }
 
@@ -45,6 +61,10 @@ int main(int argc, char *argv[]) {
         }
         case StopCommand: {
             stop();
+            break;
+        }
+        case ReloadCommand: {
+            reload(args.conf_file);
             break;
         }
         case TestConfCommand: {

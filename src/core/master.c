@@ -1,7 +1,9 @@
 #include "master.h"
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "../util/daemonize.h"
@@ -15,7 +17,10 @@ void check_permission();
 
 ThreadStore THREAD_STORE = {};
 
+pthread_t MASTER;
+
 void worker_start() {
+    logging(LOG_DEBUG, "worker: start");
     int soc = server_socket(CONFIG.port);
     if (soc == -1) {
         logging(LOG_ERROR, "server_socket(%s): error\n", CONFIG.port);
@@ -23,6 +28,50 @@ void worker_start() {
 
     accept_loop(soc);
     close(soc);
+}
+
+void init_threads() {
+    THREAD_STORE.threads_count = CONFIG.worker_processes;
+    THREAD_STORE.threads =
+        malloc(sizeof(pthread_t) * THREAD_STORE.threads_count);
+
+    for (int i = 0; i < THREAD_STORE.threads_count; i++) {
+        pthread_t thread;
+        pthread_create(&thread, NULL, (void *)worker_start, NULL);
+        THREAD_STORE.threads[i] = thread;
+    }
+}
+
+void create_new_threads() {
+    THREAD_STORE.new_threads_count = CONFIG.worker_processes;
+    THREAD_STORE.new_threads =
+        malloc(sizeof(pthread_t) * THREAD_STORE.new_threads_count);
+
+    for (int i = 0; i < THREAD_STORE.new_threads_count; i++) {
+        pthread_t thread;
+        pthread_create(&thread, NULL, (void *)worker_start, NULL);
+        THREAD_STORE.new_threads[i] = thread;
+    }
+}
+
+void kill_threads() {
+    for (int i = 0; i < THREAD_STORE.threads_count; i++) {
+        pthread_kill(THREAD_STORE.threads[i], SIGTERM);
+    }
+
+    for (int i = 0; i < THREAD_STORE.threads_count; i++) {
+        pthread_join(THREAD_STORE.threads[i], NULL);
+    }
+}
+
+void swap_threads() {
+    free(THREAD_STORE.threads);
+    THREAD_STORE.threads_count = THREAD_STORE.new_threads_count;
+    THREAD_STORE.threads =
+        malloc(sizeof(pthread_t) * THREAD_STORE.threads_count);
+    memcpy(THREAD_STORE.threads, THREAD_STORE.new_threads,
+           sizeof(pthread_t) * THREAD_STORE.threads_count);
+    free(THREAD_STORE.new_threads);
 }
 
 void master_start() {
@@ -54,15 +103,9 @@ void master_start() {
         exit(EXIT_FAILURE);
     }
 
-    THREAD_STORE.threads_count = CONFIG.worker_processes;
-    THREAD_STORE.threads =
-        malloc(sizeof(pthread_t) * THREAD_STORE.threads_count);
+    MASTER = pthread_self();
 
-    for (int i = 0; i < THREAD_STORE.threads_count; i++) {
-        pthread_t thread;
-        pthread_create(&thread, NULL, (void *)worker_start, NULL);
-        THREAD_STORE.threads[i] = thread;
-    }
+    init_threads();
 
     for (;;) {
         sleep(10);

@@ -4,6 +4,7 @@
 typedef enum {
     StartCommand,
     StopCommand,
+    ReloadCommand,
     TestConfCommand,
 } Command;
 

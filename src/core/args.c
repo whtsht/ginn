@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../util/streq.h"
 #include "default.h"
 
 void print_usage() {
@@ -20,11 +21,13 @@ Args parse_args(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    if (strcmp(argv[1], "start") == 0) {
+    if (streq(argv[1], "start")) {
         args.command = StartCommand;
-    } else if (strcmp(argv[1], "stop") == 0) {
+    } else if (streq(argv[1], "stop")) {
         args.command = StopCommand;
-    } else if (strcmp(argv[1], "test") == 0) {
+    } else if (streq(argv[1], "reload")) {
+        args.command = ReloadCommand;
+    } else if (streq(argv[1], "test")) {
         args.command = TestConfCommand;
     }
 
