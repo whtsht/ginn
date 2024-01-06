@@ -1,5 +1,8 @@
+#include "worker.h"
+
 #include <errno.h>
 #include <netdb.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,8 +15,18 @@
 #include "../http/route.h"
 #include "../util/logger.h"
 #include "config.h"
+#include "worker_info.h"
 
-int send_recv(int acc);
+void shutdown_worker() {
+    WorkerInfo info = get_worker_info(pthread_self());
+    if (epoll_ctl(info.epoll_fd, EPOLL_CTL_DEL, info.listen_sokcet, NULL) ==
+        -1) {
+        logging(LOG_ERROR, "epoll_ctl: %s", strerror(errno));
+        close(info.epoll_fd);
+        exit(EXIT_FAILURE);
+    }
+    set_shutdown_worker_info(pthread_self());
+}
 
 int server_socket(const char *portnm) {
     struct addrinfo hints;
@@ -139,16 +152,27 @@ void accept_loop(int soc) {
         exit(EXIT_FAILURE);
     }
 
+    add_worker_info(pthread_self(), soc, epollfd);
+
     int count = 0;
     for (;;) {
         int nfds;
         switch ((nfds = epoll_wait(epollfd, events,
                                    CONFIG.worker_connections + 1, 10 * 1000))) {
             case -1: {
-                logging(LOG_ERROR, "epoll_ctl: %s", strerror(errno));
-                exit(EXIT_FAILURE);
+                if (errno != EINTR) {
+                    logging(LOG_ERROR, "epoll_ctl: %s", strerror(errno));
+                    exit(EXIT_FAILURE);
+                }
+
+                if (count == 0) {
+                    remove_worker_info(pthread_self());
+                    logging(LOG_DEBUG, "worker: exit");
+                    pthread_exit(NULL);
+                }
             }
             case 0: {
+                /* Timeout */
                 break;
             }
             default: {
@@ -160,6 +184,12 @@ void accept_loop(int soc) {
                         serve(events[i].data.fd, epollfd, &ev);
                         close(events[i].data.fd);
                         count--;
+                        if (get_worker_info(pthread_self()).is_shutdown &&
+                            count == 0) {
+                            remove_worker_info(pthread_self());
+                            logging(LOG_DEBUG, "worker: exit");
+                            pthread_exit(NULL);
+                        }
                     }
                 }
             }

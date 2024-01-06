@@ -5,6 +5,7 @@
 #include "../core/config.h"
 #include "../util/logger.h"
 #include "master.h"
+#include "worker.h"
 
 static void sig_hup_handler() {
     if (pthread_self() == MASTER) {
@@ -21,10 +22,11 @@ static void sig_term_handler() {
     if (pthread_self() == MASTER) {
         logging(LOG_DEBUG, "master: term");
         kill_threads();
+        logging(LOG_DEBUG, "master: exit");
         exit(EXIT_SUCCESS);
     } else {
         logging(LOG_DEBUG, "worker: term");
-        pthread_exit(NULL);
+        shutdown_worker();
     }
 }
 
