@@ -36,33 +36,32 @@ typedef union {
 } ParserData;
 
 typedef enum {
-    PS_Success,
-    PS_Waiting,
-    PS_Failure,
-    PS_EndOfContent,
-} ParserStatus;
+    PR_Success,
+    PR_Failure,
+    PR_EndOfContent,
+} ParserResult;
 
 struct Parser {
-    ParserStatus (*lexer)(struct Parser* parser);
-    ParserStatus (*next)(ParserData* data);
-    ParserStatus (*current)(char* c, ParserData* data);
+    ParserResult (*lexer)(struct Parser* parser);
+    ParserResult (*next)(ParserData* data);
+    ParserResult (*current)(char* c, ParserData* data);
     ParserData data;
     ParserType type;
 };
 
 typedef struct Parser Parser;
 
-Parser* parser_from_string(ParserStatus (*lexer)(struct Parser* parser),
+Parser* parser_from_string(ParserResult (*lexer)(struct Parser* parser),
                            char* string);
-Parser* parser_from_file(ParserStatus (*lexer)(struct Parser* parser),
+Parser* parser_from_file(ParserResult (*lexer)(struct Parser* parser),
                          FILE* file);
-Parser* parser_from_socket(ParserStatus (*lexer)(struct Parser* parser),
+Parser* parser_from_socket(ParserResult (*lexer)(struct Parser* parser),
                            int socket);
-ParserStatus parser_next(Parser* parser);
-ParserStatus parser_current(Parser* parser, char* c);
-ParserStatus parser_char(Parser* parser, char c);
-ParserStatus parser_string(Parser* parser, char* s);
-ParserStatus parser_word(Parser* parser, int (*separator)(char), char* word,
+ParserResult parser_next(Parser* parser);
+ParserResult parser_current(Parser* parser, char* c);
+ParserResult parser_char(Parser* parser, char c);
+ParserResult parser_string(Parser* parser, char* s);
+ParserResult parser_word(Parser* parser, int (*separator)(char), char* word,
                          size_t max_word_length);
 void parser_free(Parser* parser);
 

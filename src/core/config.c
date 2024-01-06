@@ -11,12 +11,12 @@
 
 Config CONFIG;
 
-static ParserStatus config_lexer(Parser* parser) {
+static ParserResult config_lexer(Parser* parser) {
     char n;
-    while (parser_current(parser, &n) == PS_Success) {
+    while (parser_current(parser, &n) == PR_Success) {
         /* skip line comment */
         if (n == '#') {
-            while (parser_current(parser, &n) == PS_Success && n != '\n') {
+            while (parser_current(parser, &n) == PR_Success && n != '\n') {
                 parser_next(parser);
             }
             continue;
@@ -36,13 +36,13 @@ static int separator(char c) { return c == ';' || c == ' ' || c == '\n'; }
 static int space(char c) { return c == ' '; }
 
 static ConfigResult parser_logfile(Parser* parser, char* filename) {
-    if (parser_word(parser, separator, filename, PATH_MAX) != PS_Success ||
+    if (parser_word(parser, separator, filename, PATH_MAX) != PR_Success ||
         strlen(filename) == 0) {
         fprintf(stderr, "logfile: expected filename\n");
         return CR_Failure;
     }
 
-    if (parser_char(parser, ';') != PS_Success) {
+    if (parser_char(parser, ';') != PR_Success) {
         fprintf(stderr, "logfile: expected `;`\n");
         return CR_Failure;
     }
@@ -51,13 +51,13 @@ static ConfigResult parser_logfile(Parser* parser, char* filename) {
 }
 
 static ConfigResult parser_pidfile(Parser* parser, char* filename) {
-    if (parser_word(parser, separator, filename, PATH_MAX) != PS_Success ||
+    if (parser_word(parser, separator, filename, PATH_MAX) != PR_Success ||
         strlen(filename) == 0) {
         fprintf(stderr, "pidfile: expected filename\n");
         return CR_Failure;
     }
 
-    if (parser_char(parser, ';') != PS_Success) {
+    if (parser_char(parser, ';') != PR_Success) {
         fprintf(stderr, "pidfile: expected `;`\n");
         return CR_Failure;
     }
@@ -66,12 +66,12 @@ static ConfigResult parser_pidfile(Parser* parser, char* filename) {
 }
 
 static ConfigResult parser_port(Parser* parser, char* port) {
-    if (parser_word(parser, separator, port, PORT_MAX) != PS_Success) {
+    if (parser_word(parser, separator, port, PORT_MAX) != PR_Success) {
         fprintf(stderr, "port: expected port number\n");
         return CR_Failure;
     }
 
-    if (parser_char(parser, ';') != PS_Success) {
+    if (parser_char(parser, ';') != PR_Success) {
         fprintf(stderr, "port: expected `;`\n");
         return CR_Failure;
     }
@@ -91,7 +91,7 @@ static ConfigResult parser_error_page(Parser* parser, ErrorPage* error_pages,
     char word[PATH_MAX];
     int count = 0;
     char* end;
-    while (parser_word(parser, separator, word, PATH_MAX) == PS_Success) {
+    while (parser_word(parser, separator, word, PATH_MAX) == PR_Success) {
         int error_code = 0;
         if (!(error_code = strtol(word, &end, 10))) {
             break;
@@ -110,7 +110,7 @@ static ConfigResult parser_error_page(Parser* parser, ErrorPage* error_pages,
         error_pages->path = strdup(word);
     }
 
-    if (parser_char(parser, ';') != PS_Success) {
+    if (parser_char(parser, ';') != PR_Success) {
         fprintf(stderr, "error_page: expected `;`\n");
         return CR_Failure;
     }
@@ -122,13 +122,13 @@ static ConfigResult parser_worker_connections(Parser* parser,
                                               int* worker_connections) {
     char word[WORKER_CONNECTION_LENGTH];
     if (parser_word(parser, separator, word, WORKER_CONNECTION_LENGTH) !=
-        PS_Success) {
+        PR_Success) {
         fprintf(stderr,
                 "worker_connections: expected the number of connections\n");
         return CR_Failure;
     }
 
-    if (parser_char(parser, ';') != PS_Success) {
+    if (parser_char(parser, ';') != PR_Success) {
         fprintf(stderr, "worker_connections: expected `;`\n");
         return CR_Failure;
     }
@@ -159,12 +159,12 @@ static ConfigResult parser_worker_processes(Parser* parser,
                                             int* worker_processes) {
     char word[WORKER_PROCESSES_LENGTH];
     if (parser_word(parser, separator, word, WORKER_PROCESSES_LENGTH) !=
-        PS_Success) {
+        PR_Success) {
         fprintf(stderr, "worker_processes: expected the number of processes\n");
         return CR_Failure;
     }
 
-    if (parser_char(parser, ';') != PS_Success) {
+    if (parser_char(parser, ';') != PR_Success) {
         fprintf(stderr, "worker_processes: expected `;`\n");
         return CR_Failure;
     }
@@ -202,7 +202,7 @@ ConfigResult load_config(const char* conf_file) {
     Parser* parser = parser_from_file(config_lexer, fp);
 
     char directive[DIRECTIVE_MAX];
-    while (parser_word(parser, space, directive, DIRECTIVE_MAX) == PS_Success) {
+    while (parser_word(parser, space, directive, DIRECTIVE_MAX) == PR_Success) {
         if (streq(directive, "logfile")) {
             char* filename = malloc(sizeof(char) * PATH_MAX);
             if (parser_logfile(parser, filename)) {

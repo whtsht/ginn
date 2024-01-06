@@ -12,7 +12,7 @@ typedef struct {
     char* value;
 } HTTPHeader;
 
-ParserStatus parser_headers(Parser* parser, HTTPHeader** headers,
+ParserResult parser_headers(Parser* parser, HTTPHeader** headers,
                             size_t* header_length);
 
 void headers_free(HTTPHeader* headers, size_t length);

@@ -21,7 +21,7 @@ typedef struct {
     size_t header_length;
 } HTTPRequest;
 
-ParserStatus http_lexer(Parser* parser);
+ParserResult http_lexer(Parser* parser);
 HTTPRequest* parse_http_request(Parser* parser);
 void request_free(HTTPRequest* request);
 char* method_to_string(HTTPRequestMethod method);

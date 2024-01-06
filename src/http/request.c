@@ -6,9 +6,9 @@
 
 #include "header.h"
 
-ParserStatus http_lexer(Parser* parser) {
+ParserResult http_lexer(Parser* parser) {
     char n;
-    while (parser_current(parser, &n) == PS_Success && n == ' ') {
+    while (parser_current(parser, &n) == PR_Success && n == ' ') {
         parser_next(parser);
     }
     return parser_current(parser, &n);
@@ -20,7 +20,7 @@ HTTPRequest* parse_http_request(Parser* parser) {
     /* Method */
     char method_str[METHOD_MAX_LENGTH];
     if (parser_word(parser, separator, method_str, METHOD_MAX_LENGTH) !=
-        PS_Success) {
+        PR_Success) {
         return NULL;
     }
     HTTPRequestMethod method;
@@ -34,25 +34,25 @@ HTTPRequest* parse_http_request(Parser* parser) {
 
     /* Url */
     char url[URL_MAX_LENGTH] = "";
-    if (parser_word(parser, separator, url, URL_MAX_LENGTH) != PS_Success) {
+    if (parser_word(parser, separator, url, URL_MAX_LENGTH) != PR_Success) {
         return NULL;
     }
 
     /* Version */
     char version[VERSION_MAX_LENGTH] = "";
     if (parser_word(parser, separator, version, VERSION_MAX_LENGTH) !=
-        PS_Success) {
+        PR_Success) {
         return NULL;
     }
 
     /* Newline */
-    if (parser_string(parser, "\r\n") != PS_Success) {
+    if (parser_string(parser, "\r\n") != PR_Success) {
         return NULL;
     }
 
     HTTPHeader* headers = NULL;
     size_t header_length = 0;
-    if (parser_headers(parser, &headers, &header_length) != PS_Success) {
+    if (parser_headers(parser, &headers, &header_length) != PR_Success) {
         return NULL;
     }
 
