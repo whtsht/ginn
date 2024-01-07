@@ -32,23 +32,15 @@ size_t get_file_size(FILE* fp) {
     return sz > 0 ? sz - 1 : sz;
 }
 
-static ssize_t send_(int fd, const void* buf, size_t n, int flag) {
-#ifdef TEST
-    return write(fd, buf, n);
-#else
-    return send(fd, buf, n, flag);
-#endif
-}
-
 HTTPResponseResult send_http_response(HTTPResponse* response, int socket) {
     char* proto = response->protocol;
     if (!proto) proto = RESPONSE_PROTOCOL;
-    if (send_(socket, proto, strlen(proto), 0) == -1) {
+    if (write(socket, proto, strlen(proto)) == -1) {
         return HRR_Failure;
     }
 
     char* status = status_to_string(response->status);
-    if (send_(socket, status, strlen(status), 0) == -1) {
+    if (write(socket, status, strlen(status)) == -1) {
         return HRR_Failure;
     }
 
@@ -59,7 +51,7 @@ HTTPResponseResult send_http_response(HTTPResponse* response, int socket) {
                         file_size)) {
         return HRR_Failure;
     }
-    if (send_(socket, content_length, strlen(content_length), 0) == -1) {
+    if (write(socket, content_length, strlen(content_length)) == -1) {
         return HRR_Failure;
     }
 
@@ -67,7 +59,7 @@ HTTPResponseResult send_http_response(HTTPResponse* response, int socket) {
     size_t cnt = 0;
     do {
         cnt = fread(buf, sizeof(char), 1000, response->body.file);
-        if (send_(socket, buf, cnt, 0) == -1) {
+        if (write(socket, buf, cnt) == -1) {
             return HRR_Failure;
         }
     } while (cnt == 1000);

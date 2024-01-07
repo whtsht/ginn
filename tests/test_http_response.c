@@ -19,6 +19,7 @@ static void cmp_file(char* expected) {
     fread(buf, 1, sz, out);
     CU_ASSERT_STRING_EQUAL(buf, expected);
     fclose(out);
+    free(buf);
 }
 
 static void send_request() {
@@ -30,7 +31,7 @@ static void send_request() {
                        .headers = NULL,
                        .header_length = 0,
                        .body = (HTTPResponseBody){.file = fp}};
-    send_http_response(&response, fileno(out));
+    CU_ASSERT_EQUAL(send_http_response(&response, fileno(out)), HRR_Success);
     fclose(out);
 
     cmp_file("HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nHello World!");

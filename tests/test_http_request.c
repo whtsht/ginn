@@ -3,11 +3,11 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/TestDB.h>
 
-#include "../src/core/parser.h"
 #include "../src/http/request.h"
+#include "../src/util/parser.h"
 
 static void get_request1() {
-    Parser* parser = parser_from_string(http_lexer, "GET / HTTP/1.1\r\n");
+    Parser* parser = parser_from_string(http_lexer, "GET / HTTP/1.1\r\n\r\n");
     HTTPRequest* req = parse_http_request(parser);
 
     CU_ASSERT_PTR_NOT_NULL(req);
