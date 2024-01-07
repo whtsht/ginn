@@ -74,3 +74,11 @@ Note. _Start Ginn on port number 4700._
 ```
 $ siege -c 200 -t 5S -b -i --log=/tmp/siege.log -f ./urls.txt
 ```
+
+## References
+
+- [Pico HTTP Server in C](https://github.com/foxweb/pico)
+
+- [pidfile.c at enki/gvpe](https://github.com/enki/gvpe/blob/master/lib/pidfile.c)
+
+- [pasce/daemon-skeleton-linux-c](https://github.com/pasce/daemon-skeleton-linux-c)
