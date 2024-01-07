@@ -8,12 +8,11 @@
 
 #include "../util/daemonize.h"
 #include "../util/logger.h"
+#include "../util/permission.h"
 #include "../util/pidfile.h"
 #include "config.h"
 #include "signal_handler.h"
 #include "worker.h"
-
-void check_permission();
 
 ThreadStore THREAD_STORE = {};
 
