@@ -1,7 +1,8 @@
 services:
-  ginn:
+  web:
     build: .
     ports:
       - 4700:80
     volumes:
       - ./public:/usr/share/ginn/public
+      - ./ginn.conf:/etc/ginn.conf
