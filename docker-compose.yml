@@ -1,0 +1,7 @@
+services:
+  ginn:
+    build: .
+    ports:
+      - 4700:80
+    volumes:
+      - ./public:/usr/share/ginn/public
