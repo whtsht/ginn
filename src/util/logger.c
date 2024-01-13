@@ -42,7 +42,8 @@ void logging_(LogLevel loglevel, const char* message) {
 
     char s[1000];
     time_t t = time(NULL);
-    struct tm* p = localtime(&t);
+    struct tm tm;
+    struct tm* p = localtime_r(&t, &tm);
     strftime(s, sizeof s, "%D:%T", p);
 
     fprintf(LOG_FILE, "[%s] %s: %s\n", s, prefix, message);
