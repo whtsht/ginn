@@ -90,7 +90,7 @@ Parser* parser_from_file(ParserResult (*lexer)(struct Parser* parser),
 static ParserResult next_socket(ParserData* data) {
     char n;
     ssize_t len;
-    if ((len = recv(data->socket.desc, &n, 1, 0)) != -1) {
+    if ((len = read(data->socket.desc, &n, 1)) != -1) {
         if (len == 0) return PR_EndOfContent;
 
         data->socket.cur = n;
@@ -111,7 +111,7 @@ static ParserResult current_socket(char* c, ParserData* data) {
 
     char n;
     ssize_t len = 0;
-    if ((len = recv(data->socket.desc, &n, 1, 0)) != -1) {
+    if ((len = read(data->socket.desc, &n, 1)) != -1) {
         if (len == 0) {
             *c = data->socket.cur = '\0';
             return PR_EndOfContent;
