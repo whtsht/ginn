@@ -8,16 +8,6 @@ Ginn is a web server inspired by [nginx](https://www.nginx.com/). It employs an 
 
 Note. _This was created for educational purposes and is not suitable for real production._
 
-## Getting start
-
-Please try it out with Docker first!
-
-```
-$ docker container run --rm -d -p 4700:80 whtsht/ginn
-```
-
-and open [http://localhost:4700](http://localhost:4700).
-
 ## Installation
 
 First, clone this repository and go to the directory.
